@@ -1,0 +1,13 @@
+from io import BytesIO
+from PIL import Image
+import requests
+import openai
+import os
+import cv2
+import pytesseract
+from PIL import Image, ImageDraw, ImageFont
+from cnocr import CnOcr
+
+
+if __name__ == '__main__':
+   print(os.path.join(os.path.dirname(__file__).replace("/pythonProject3","")))
