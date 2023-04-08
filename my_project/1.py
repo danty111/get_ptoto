@@ -9,7 +9,9 @@ from flask import jsonify, abort, request, make_response
 from my_project.common import IniFileEditor
 from my_project.ptojectAPI import MakePhoto
 from retrying import retry
-
+import sys
+import os
+sys.path.append(os.path.dirname(sys.path[0]))
 
 api = flask.Flask(__name__)
 
