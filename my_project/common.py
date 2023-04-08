@@ -2,13 +2,10 @@ import ast
 import configparser
 import copy
 import json
-import os
-import string
+
 from io import BytesIO
 from pprint import pprint
-import pytesseract
 import requests
-import self as self
 from cnocr import CnOcr
 from lxml import etree
 from PIL import Image, ImageDraw, ImageFont

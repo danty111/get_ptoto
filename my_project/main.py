@@ -7,8 +7,9 @@
 # Press the green button in the gutter to run the script.
 import configparser
 
-from my_project.common import IniFileEditor, GetValue, MakePhotos
-from my_project.ptojectAPI import MakePhoto
+import sys
+import os
+sys.path.append(os.path.dirname(sys.path[0]))
 
 if __name__ == '__main__':
     # print(GetValue("fkbaicai").get_card())
