@@ -2,6 +2,7 @@ import ast
 import configparser
 import copy
 import json
+import os
 
 from io import BytesIO
 from pprint import pprint
@@ -12,7 +13,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 from pyocr import pyocr
 
-config_file = "./../config.ini"
+config_file = os.getcwd().split("/my_project")[0]+"/config.ini"
+# config_file = "./../config.ini"
+
 
 
 class HttpStatus:
@@ -184,7 +187,7 @@ class MakePhotos():
             draw.text((x2 + adjust_coor[0], y2 - adjust_coor[1]), item['text'], font=font, fill=font_color)
             get_dict[item['text']] = (x2 + adjust_coor[0], y2 - adjust_coor[1])
         if save_path != "":
-            save_path = save_path+"/Image_coordinate_reference.png"
+            save_path = save_path + "/Image_coordinate_reference.png"
             new_img.save(save_path)
         return get_dict
 
@@ -267,7 +270,7 @@ class IniFileEditor:
             iniKeys.update(keyList)
         else:
             for i in keyList:
-                self.set_value(section,i,keyList[i])
+                self.set_value(section, i, keyList[i])
             diff = set(iniKeys.keys()) - set(keyList.keys())
             return diff
         for option in self.config.options(section):
