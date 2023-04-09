@@ -25,7 +25,7 @@ def init_app():
                 if "save" in value:
                     pro_path = "/my_project/my_html/"
                 else:
-                    pro_path = "/my_project/my_html/templates"
+                    pro_path = "/my_project/my_html/templates/"
                 file_path = IniFileEditor().file_path.split("/config.ini")[0]
                 value = pro_path + IniFileEditor().get_value(section, option).split("/")[-1]
                 # print(file_path + value)
