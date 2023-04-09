@@ -146,8 +146,7 @@ class MakePhotos():
         :param addValueCoord:
         """
         self.back_ground_image = bGImgPath
-        tools = pyocr.get_available_tools()
-        self.tool = tools[0]
+
 
     def _judgment_Coord(self, addValueCoord):
         if type(addValueCoord) == tuple and len(addValueCoord) == 2:
