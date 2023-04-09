@@ -244,6 +244,7 @@ class IniFileEditor:
         self.config = configparser.ConfigParser()
         self.config.read(self.file_path)
 
+
     def get_value(self, section, key):
         return self.config.get(section, key)
 

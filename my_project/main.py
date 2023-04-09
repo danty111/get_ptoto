@@ -13,8 +13,28 @@ from retrying import retry
 import sys
 
 sys.path.append(os.path.dirname(sys.path[0]))
+config_file = os.getcwd().split("/my_project")[0] + "/config.ini"
+
+
+def init_app():
+    config = IniFileEditor().config
+    for section in config.sections():
+        for option in config.options(section):
+            value = config.get(section, option)
+            if '/' in value:
+                file_path = IniFileEditor().file_path.split("/config.ini")[0]
+                value = IniFileEditor().get_value(section, option).split("/")[-1]
+                print(file_path + value)
+                config.set(section, option, file_path + value)
+    with open(IniFileEditor().file_path, 'w') as configfile:
+        config.write(configfile)
+
+        
+init_app()
 
 api = flask.Flask(__name__)
+
+
 
 
 @api.route('/card', methods=['GET'])
@@ -38,7 +58,6 @@ def card():
 
 @api.route('/set_card_temple', methods=['POST'])
 def set_card_template():
-
     req_data = request.get_json()
 
     if not req_data:
@@ -56,6 +75,5 @@ def set_card_template():
 
 
 if __name__ == '__main__':
-
     api.run(port=8888, host='0.0.0.0')
     # print(IniFileEditor().))

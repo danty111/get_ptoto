@@ -45,7 +45,7 @@ class MakePhoto:
                                                                           ,section["adjust_coor"]
                                                                           ,section["font_color"],section["save_path"])
             get_value = self._replace_dict(get_value, parameter_dic)
-            get_value["template_path"] = self.template_image_name
+            IniFileEditor().set_value("parameter_dictionary","template_path",self.template_image_name)
             IniFileEditor().write_value("card_template",get_value)
         # 获取名片信息
         msg = Request.get_json(GetValue(name).get_card())
