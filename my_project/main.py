@@ -22,19 +22,21 @@ def init_app():
         for option in config.options(section):
             value = config.get(section, option)
             if '/' in value:
+                if "save" in value:
+                    pro_path = "/my_project/my_html/"
+                else:
+                    pro_path = "/my_project/my_html/templates"
                 file_path = IniFileEditor().file_path.split("/config.ini")[0]
-                value = IniFileEditor().get_value(section, option).split("/")[-1]
-                print(file_path + value)
+                value = pro_path + IniFileEditor().get_value(section, option).split("/")[-1]
+                # print(file_path + value)
                 config.set(section, option, file_path + value)
     with open(IniFileEditor().file_path, 'w') as configfile:
         config.write(configfile)
 
-        
+
 init_app()
 
 api = flask.Flask(__name__)
-
-
 
 
 @api.route('/card', methods=['GET'])
