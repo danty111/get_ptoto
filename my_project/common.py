@@ -98,13 +98,16 @@ class GetValue():
         :return:
         """
         res = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}")
+        res_organizations = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}/organizations")
         if "404" not in res:
             _element = etree.HTML(res)
+            _element_org = etree.HTML(res_organizations)
             text = _element.xpath('//*[@class="inner clearfix"]/*[@class="info"]//p//text()')
             tex1 = _element.xpath("//*[@class='left-col']//text()")
             image_ass = _element.xpath("//*[@class='thumb']/img/@src")[0]
             image_medal = _element.xpath('//*[@class="icon"]/img/@src')[0]
             image_user = _element.xpath('//*[@class="thumb"]/a/img/@src')[0]
+            image_ass_num = len(_element_org.xpath('//*[@class="profile-content orgs-content clearfix"]/div'))
             list = text + tex1
             text = [x.strip() for x in list if x.strip() != '']
             text.insert(0, "id")
@@ -118,8 +121,9 @@ class GetValue():
                     key.append(text[i])
                 else:
                     value.append(text[i])
-
+            #加入舰队数量
             get_dict = dict(zip(key, value))
+            get_dict["fleet_quantity"] = str(image_ass_num)
             get_dict["ass_image_path"] = "https://robertsspaceindustries.com/" + image_ass
             get_dict["image_medal"] = image_medal
             get_dict["user_image_path"] = "https://robertsspaceindustries.com/" + image_user

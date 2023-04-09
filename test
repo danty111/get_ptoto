@@ -6,19 +6,7 @@ import os
 
 import configparser
 
-from common import IniFileEditor
+from common import IniFileEditor, GetValue
 
 if __name__ == '__main__':
-
-
-   # IniFileEditor().set_value("card","background","")
-
-   config = IniFileEditor().config
-   for section in config.sections():
-      for option in config.options(section):
-         value = config.get(section, option)
-         if '/' in value:
-            file_path = IniFileEditor().file_path.split("/config.ini")[0]
-            value = IniFileEditor().get_value(section, option).split("/")[-1]
-            print(section,option,file_path+value)
-            # config.set(section, option, file_path+value)
+   print(GetValue("fkbaicai").get_card())
