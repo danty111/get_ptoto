@@ -8,8 +8,9 @@ from my_project.common import IniFileEditor, MakePhotos, GetValue, Request
 class MakePhoto:
     def __init__(self):
         self.config = json.loads(IniFileEditor().read_ini_file())
+        print(os.path)
         self.back_ground_image = Image.open(self.config["card"]["background"])
-        self.template_image_name = self.config["card"]["background"].replace(".", "_template.")
+        self.template_image_name = self.config["card"]["background"].replace(".png", "_template.png")
         self.template_image = Image.open(self.template_image_name)
 
     def _replace_dict(self, old_dict, com_table):

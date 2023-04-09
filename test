@@ -1,13 +1,24 @@
 from io import BytesIO
 from PIL import Image
 import requests
-import openai
-import os
-import cv2
-import pytesseract
-from PIL import Image, ImageDraw, ImageFont
-from cnocr import CnOcr
 
+import os
+
+import configparser
 
 if __name__ == '__main__':
-   print(os.path.join(os.path.dirname(__file__).replace("/pythonProject3","")))
+
+
+
+   # 创建ConfigParser对象
+   config = configparser.ConfigParser()
+
+   # 读取INI文件
+   config.read('config.ini')
+
+   # 获取INI文件中所有的section
+   sections = config.get("card","background")
+
+   # 打印所有的section
+
+   print(sections)

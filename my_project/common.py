@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from pyocr import pyocr
 
-config_file = "./config.ini"
+config_file = "./../config.ini"
 
 
 class HttpStatus:
