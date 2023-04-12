@@ -48,7 +48,10 @@ class MakePhoto:
             IniFileEditor().write_value("card_template",get_value)
             IniFileEditor().set_value("card","need_change","false")
         # 获取名片信息
-        msg = Request.get_json(GetValue(name).get_card())
+        try:
+            msg = Request.get_json(GetValue(name).get_card())
+        except Exception as e:
+            raise ValueError("Error occurred: "+str(e))
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["ass_image_path"], template["ass_image_size"], template["ass_image_coordinate"])
         self.back_ground_image = MakePhotos(self.back_ground_image) \

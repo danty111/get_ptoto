@@ -97,7 +97,7 @@ class GetValue():
         """
         res = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}")
         res_organizations = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}/organizations")
-        if "404" not in res:
+        if "You are currently venturing unknown space" not in res:
             _element = etree.HTML(res)
             _element_org = etree.HTML(res_organizations)
             text = _element.xpath('//*[@class="inner clearfix"]/*[@class="info"]//p//text()')
@@ -134,7 +134,7 @@ class GetValue():
                 new_dict[new_key] = get_dict[i]
             return str(new_dict).replace("'", "\"")
         else:
-            return EOFError, res
+            raise ValueError("Without this user")
 
     def get_boat(self, ):
         print(1)

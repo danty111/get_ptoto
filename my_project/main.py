@@ -54,13 +54,13 @@ api.logger.addHandler(handler)
 
 
 @api.route('/card', methods=['GET'])
-@retry(stop_max_attempt_number=6, wait_fixed=1000)
+@retry(stop_max_attempt_number=6, wait_fixed=300)
 def card():
     try:
         name = request.args.get('name')
         image = MakePhoto().make_card(name)
     except Exception as e:
-        raise e
+        return abort(400, description=str(e))
 
     buffer = BytesIO()
     image.convert('RGBA').save(buffer, format="PNG")
