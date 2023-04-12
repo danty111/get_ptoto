@@ -1,0 +1,27 @@
+2023-04-12 10:03:48,875 ERROR: Exception on /card [GET] [in /Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/flask/app.py:1744]
+Traceback (most recent call last):
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/flask/app.py", line 2528, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/flask/app.py", line 1825, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/flask/app.py", line 1823, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/flask/app.py", line 1799, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/retrying.py", line 56, in wrapped_f
+    return Retrying(*dargs, **dkw).call(f, *args, **kw)
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/retrying.py", line 266, in call
+    raise attempt.get()
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/retrying.py", line 301, in get
+    six.reraise(self.value[0], self.value[1], self.value[2])
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/six.py", line 719, in reraise
+    raise value
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/venv/lib/python3.8/site-packages/retrying.py", line 251, in call
+    attempt = Attempt(fn(*args, **kwargs), attempt_number, False)
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/my_project/main.py", line 63, in card
+    raise e
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/my_project/main.py", line 61, in card
+    image = MakePhoto().make_card(name)
+  File "/Users/haiboyuan/PycharmProjects/pythonProject3/get_ptoto/my_project/ptojectAPI.py", line 53, in make_card
+    .photo_to_photo(msg["ass_image_path"], template["ass_image_size"], template["ass_image_coordinate"])
+TypeError: 'NoneType' object is not subscriptable
