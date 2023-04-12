@@ -125,7 +125,10 @@ class GetValue():
             get_dict["ass_image_path"] = "https://robertsspaceindustries.com/" + image_ass
             get_dict["image_medal"] = image_medal
             get_dict["user_image_path"] = "https://robertsspaceindustries.com/" + image_user
-            get_dict["Location"] = get_dict["Location"].replace(" ", "")
+            if "Location" in get_dict:
+                get_dict["Location"] = get_dict["Location"].replace(" ", "")
+            else:
+                get_dict["Location"] = "-"
             new_dict = {}
             for i in get_dict:
                 new_key = i.lower().replace(" ", "_")
