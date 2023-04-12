@@ -11,10 +11,8 @@ from cnocr import CnOcr
 from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
 
-from pyocr import pyocr
-
 config_file = os.getcwd().split("/my_project")[0]+"/config.ini"
-# config_file = "./../config.ini"
+
 
 
 
@@ -158,7 +156,7 @@ class MakePhotos():
         else:
             pprint(f"位置填写错误{addValueCoord}")
 
-    def recognize_text(self, font_path, font_size="30", adjust_coor="(15, 8)", font_color="red", save_path=""):
+    def recognize_text(self, font_path, font_size, adjust_coor, font_color, save_path):
         """
         识别图片文字模型
         :param font_path: 文字文件地址
@@ -186,7 +184,6 @@ class MakePhotos():
             draw.rectangle((x1, y1, x2, y2), outline='red')
             if "：" in item['text'] or ":" in item['text']:
                 item['text'] = item['text'].replace("：", "").replace(":", "")
-
             draw.text((x2 + adjust_coor[0], y2 - adjust_coor[1]), item['text'], font=font, fill=font_color)
             get_dict[item['text']] = (x2 + adjust_coor[0], y2 - adjust_coor[1])
         if save_path != "":
@@ -219,12 +216,12 @@ class MakePhotos():
         return result_image
         # Displaying the image
 
-    def text_to_photo(self, chars, ttf_path, addValueCoord):
+    def text_to_photo(self, chars, ttf_path,ttf_size, font_color,addValueCoord):
         # ttfont = ImageFont.truetype("/Library/Fonts/华文细黑.ttf", 20)  # 这里我之前使用Arial.ttf时不能打出中文，用华文细黑就可以
 
         # 2. 加载字体并指定字体大小
         # ttf = ImageFont.load_default()  # 默认字体
-        ttf = ImageFont.truetype(ttf_path, 30)
+        ttf = ImageFont.truetype(ttf_path, int(ttf_size))
         # 3. 创建绘图对象
         img_draw = ImageDraw.Draw(self.back_ground_image)
         # 4. 在图片上写字
@@ -236,13 +233,16 @@ class MakePhotos():
             list = dict(addValueCoord).keys()
             if not (i in list) or addValueCoord[i] == '(0,0)':
                 continue
-            img_draw.text(ast.literal_eval(addValueCoord[i]), chars[i], font=ttf, fill=(255, 0, 0))
+            img_draw.text(ast.literal_eval(addValueCoord[i]), chars[i], font=ttf, fill=font_color)
         return self.back_ground_image
         # image.save("1.jpg")
 
 
 class IniFileEditor:
     def __init__(self):
+        """
+        config_file：ini文件路径，在
+        """
         self.file_path = config_file
         self.config = configparser.ConfigParser()
         self.config.read(self.file_path)

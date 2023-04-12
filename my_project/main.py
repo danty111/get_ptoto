@@ -3,8 +3,10 @@
 import json
 import os
 from io import BytesIO
-
+import logging
+from logging.handlers import RotatingFileHandler
 import flask
+from PIL.Image import Image
 
 from flask import jsonify, abort, request, make_response
 from my_project.common import IniFileEditor
@@ -16,7 +18,13 @@ sys.path.append(os.path.dirname(sys.path[0]))
 config_file = os.getcwd().split("/my_project")[0] + "/config.ini"
 
 
+
 def init_app():
+    """
+    预处理：将ini文件的地址根据当前项目地址更换，
+    用相对地址总是有莫名其妙的问题，懒得查了
+    :return:
+    """
     config = IniFileEditor().config
     for section in config.sections():
         for option in config.options(section):
@@ -28,7 +36,6 @@ def init_app():
                     pro_path = "/my_project/my_html/templates/"
                 file_path = IniFileEditor().file_path.split("/config.ini")[0]
                 value = pro_path + IniFileEditor().get_value(section, option).split("/")[-1]
-                # print(file_path + value)
                 config.set(section, option, file_path + value)
     with open(IniFileEditor().file_path, 'w') as configfile:
         config.write(configfile)
@@ -38,9 +45,16 @@ init_app()
 
 api = flask.Flask(__name__)
 
+# 配置日志记录器
+handler = RotatingFileHandler(f'{os.getcwd().split("/my_project")[0]}/my_logs/app.log', maxBytes=1024*1024*10, backupCount=5)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+handler.setFormatter(formatter)
+api.logger.addHandler(handler)
+
 
 @api.route('/card', methods=['GET'])
-@retry(stop_max_attempt_number=3, wait_fixed=1000)
+@retry(stop_max_attempt_number=6, wait_fixed=1000)
 def card():
     try:
         name = request.args.get('name')

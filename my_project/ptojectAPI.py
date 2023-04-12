@@ -39,13 +39,14 @@ class MakePhoto:
         # 获取名称对应字典
         parameter_dic = self.config["parameter_dictionary"]
         # 识别模版
-        if self.template_image_name != parameter_dic["template_path"]:
+        if self.template_image_name != parameter_dic["template_path"] or section["need_change"] != "false":
             get_value = MakePhotos(self.template_image).recognize_text(section["ttf_path"], section["font_size"]
                                                                           ,section["adjust_coor"]
                                                                           ,section["font_color"],section["save_path"])
             get_value = self._replace_dict(get_value, parameter_dic)
             IniFileEditor().set_value("parameter_dictionary","template_path",self.template_image_name)
             IniFileEditor().write_value("card_template",get_value)
+            IniFileEditor().set_value("card","need_change","false")
         # 获取名片信息
         msg = Request.get_json(GetValue(name).get_card())
         self.back_ground_image = MakePhotos(self.back_ground_image) \
@@ -53,7 +54,8 @@ class MakePhoto:
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["user_image_path"], template["user_image_size"], template["user_image_coordinate"])
 
-        self.back_ground_image = MakePhotos(self.back_ground_image).text_to_photo(msg, section["ttf_path"], template)
+        self.back_ground_image = MakePhotos(self.back_ground_image).text_to_photo(msg, section["ttf_path"]
+                                          ,section["font_size"] ,section["font_color"],template)
         # 将图像保存为 PNG 格式
 
         return self.back_ground_image
