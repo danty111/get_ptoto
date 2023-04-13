@@ -142,7 +142,7 @@ class GetValue():
             text = [x.strip() for x in list if x.strip() != '']
             text.insert(0, "id")
             text.insert(4, "medal")
-            if len(jud_visibility) == 0 or len(empty_ass) == 0:
+            if len(jud_visibility) == 0 and len(empty_ass) == 0:
                 text.insert(6, "organization")
             key, value = [], []
             for i in range(len(text)):
