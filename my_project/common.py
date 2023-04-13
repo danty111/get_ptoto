@@ -129,25 +129,21 @@ class GetValue():
                     image_ass = "need_empty"
 
 
-            image_medal = _element.xpath('//*[@class="icon"]/img/@src')[0]
-            image_medal = "https://robertsspaceindustries.com" + image_medal
-
             # 获取用户头像
             image_user = _element.xpath("//*[@class='thumb']/img/@src")[0]
-            if "cdn" not in image_user:
-                image_user = "https://robertsspaceindustries.com/" + image_ass
-
             # 获取徽章信息
             image_medal = _element.xpath('//*[@class="icon"]/img/@src')[0]
             if "https" not in image_medal:
                 image_medal = "https://robertsspaceindustries.com" + image_medal
+            elif "https" not in image_user:
+                image_user = "https://robertsspaceindustries.com" + image_user
             image_ass_num = len(_element_org.xpath('//*[@class="profile-content orgs-content clearfix"]/div'))
             list = text + tex1
             text = [x.strip() for x in list if x.strip() != '']
             text.insert(0, "id")
             text.insert(4, "medal")
-            # if len(jud_visibility) == 0:
-            #     text.insert(6, "organization")
+            if len(jud_visibility) == 0 or len(empty_ass) == 0:
+                text.insert(6, "organization")
             key, value = [], []
             for i in range(len(text)):
                 if "\n" in text[i] or "\r" in text[i]:
@@ -162,7 +158,7 @@ class GetValue():
             get_dict = dict(zip(key, value))
             get_dict["fleet_quantity"] = str(image_ass_num)
             get_dict["ass_image_path"] = image_ass
-            get_dict["image_medal"] = image_medal
+            get_dict["medal_image_path"] = image_medal
             get_dict["user_image_path"] = image_user
             if "Location" in get_dict:
                 get_dict["Location"] = get_dict["Location"].replace(" ", "")
@@ -234,7 +230,7 @@ class MakePhotos():
             new_img.save(save_path)
         return get_dict
 
-    def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord):
+    def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord,hierarchy="lower"):
         if "https" in photo_add:
             response = requests.get(photo_add)
             # 将图片内容转换为 Image 对象
@@ -254,8 +250,14 @@ class MakePhotos():
         # 计算比例不变的条件下新图的长度
         h_size = int(float(imgAdd.size[1]) * float(w_percent))
         imgAdd = imgAdd.resize((base_width[0], h_size))
-        new_image.paste(imgAdd, ast.literal_eval(add_value_coord), imgAdd)
-        new_image.paste(img1, (0, 0), img1)
+        if hierarchy == "lower":
+            new_image.paste(imgAdd, ast.literal_eval(add_value_coord), imgAdd)
+            new_image.paste(img1, (0, 0), img1)
+        elif hierarchy == "upper":
+            new_image.paste(img1, (0, 0), img1)
+            new_image.paste(imgAdd, ast.literal_eval(add_value_coord), imgAdd)
+        else:
+            raise Exception("hierarchy 参数仅支持'lower'或'upper'")
         result_image = new_image.resize(new_size)
 
         return result_image

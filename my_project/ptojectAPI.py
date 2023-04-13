@@ -58,9 +58,12 @@ class MakePhoto:
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["ass_image_path"], template["ass_image_size"], template["ass_image_coordinate"])
 
+        self.back_ground_image = MakePhotos(self.back_ground_image) \
+            .photo_to_photo(msg["medal_image_path"], template["medal_image_size"], template["medal_image_coordinate"],hierarchy="upper")
 
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["user_image_path"], template["user_image_size"], template["user_image_coordinate"])
+
 
         self.back_ground_image = MakePhotos(self.back_ground_image).text_to_photo(msg, section["ttf_path"]
                                           ,section["font_size"] ,section["font_color"],template)
