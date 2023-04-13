@@ -123,9 +123,9 @@ class GetValue():
                     text.append("无权限查看")
                 else:
                     text.append("organization")
-                    text.append("未加入舰队")
+                    text.append("无主舰队")
                     text.append("organization_rank")
-                    text.append("未加入舰队")
+                    text.append("无主舰队")
                     image_ass = "need_empty"
 
 
