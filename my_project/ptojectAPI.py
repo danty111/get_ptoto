@@ -9,6 +9,8 @@ class MakePhoto:
     def __init__(self):
         self.config = json.loads(IniFileEditor().read_ini_file())
         self.back_ground_image = Image.open(self.config["card"]["background"])
+        self.no_fleet = self.config["card"]["no_fleet"]
+
         self.template_image_name = self.config["card"]["background"].replace(".png", "_template.png")
         self.template_image = Image.open(self.template_image_name)
 
@@ -48,12 +50,15 @@ class MakePhoto:
             IniFileEditor().write_value("card_template",get_value)
             IniFileEditor().set_value("card","need_change","false")
         # 获取名片信息
-        try:
-            msg = Request.get_json(GetValue(name).get_card())
-        except Exception as e:
-            raise ValueError("Error occurred: "+str(e))
+        msg = Request.get_json(GetValue(name).get_card())
+
+
+        if msg["ass_image_path"] == "need_empty":
+            msg["ass_image_path"] = self.no_fleet
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["ass_image_path"], template["ass_image_size"], template["ass_image_coordinate"])
+
+
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["user_image_path"], template["user_image_size"], template["user_image_coordinate"])
 

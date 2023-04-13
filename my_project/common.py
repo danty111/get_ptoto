@@ -100,17 +100,54 @@ class GetValue():
         if "You are currently venturing unknown space" not in res:
             _element = etree.HTML(res)
             _element_org = etree.HTML(res_organizations)
+            #获取用户信息
             text = _element.xpath('//*[@class="inner clearfix"]/*[@class="info"]//p//text()')
+            #获取舰队信息
             tex1 = _element.xpath("//*[@class='left-col']//text()")
-            image_ass = _element.xpath("//*[@class='thumb']/img/@src")[0]
+
+            jud_visibility = _element.xpath('//*[@class="member-visibility-restriction member-visibility-r trans-03s"]')
+
+            empty_ass = _element.xpath('//*[@class="empty"]')
+            # 兼容舰队隐藏的问题
+            if len(jud_visibility) == 0 and len(empty_ass)==0:
+                #获取舰队信息
+                image_ass = _element.xpath('//*[@class="thumb"]/a/img/@src')[0]
+                if "cdn" not in image_ass:
+                    image_ass = "https://robertsspaceindustries.com/" + image_ass
+            else:
+                if len(empty_ass)==0:
+                    image_ass = _element.xpath("//*[@class='thumb']/img/@src")[1]
+                    text.append("organization")
+                    text.append("无权限查看")
+                    text.append("organization_rank")
+                    text.append("无权限查看")
+                else:
+                    text.append("organization")
+                    text.append("未加入舰队")
+                    text.append("organization_rank")
+                    text.append("未加入舰队")
+                    image_ass = "need_empty"
+
+
             image_medal = _element.xpath('//*[@class="icon"]/img/@src')[0]
-            image_user = _element.xpath('//*[@class="thumb"]/a/img/@src')[0]
+            image_medal = "https://robertsspaceindustries.com" + image_medal
+
+            # 获取用户头像
+            image_user = _element.xpath("//*[@class='thumb']/img/@src")[0]
+            if "cdn" not in image_user:
+                image_user = "https://robertsspaceindustries.com/" + image_ass
+
+            # 获取徽章信息
+            image_medal = _element.xpath('//*[@class="icon"]/img/@src')[0]
+            if "https" not in image_medal:
+                image_medal = "https://robertsspaceindustries.com" + image_medal
             image_ass_num = len(_element_org.xpath('//*[@class="profile-content orgs-content clearfix"]/div'))
             list = text + tex1
             text = [x.strip() for x in list if x.strip() != '']
             text.insert(0, "id")
             text.insert(4, "medal")
-            text.insert(6, "organization")
+            # if len(jud_visibility) == 0:
+            #     text.insert(6, "organization")
             key, value = [], []
             for i in range(len(text)):
                 if "\n" in text[i] or "\r" in text[i]:
@@ -118,13 +155,15 @@ class GetValue():
                 if i % 2 == 0:
                     key.append(text[i])
                 else:
+                    if " " in text[i]:
+                        text[i] = ''.join(text[i].split())
                     value.append(text[i])
             #加入舰队数量
             get_dict = dict(zip(key, value))
             get_dict["fleet_quantity"] = str(image_ass_num)
-            get_dict["ass_image_path"] = "https://robertsspaceindustries.com/" + image_ass
+            get_dict["ass_image_path"] = image_ass
             get_dict["image_medal"] = image_medal
-            get_dict["user_image_path"] = "https://robertsspaceindustries.com/" + image_user
+            get_dict["user_image_path"] = image_user
             if "Location" in get_dict:
                 get_dict["Location"] = get_dict["Location"].replace(" ", "")
             else:
@@ -137,6 +176,7 @@ class GetValue():
                 new_dict[new_key] = get_dict[i]
             return str(new_dict).replace("'", "\"")
         else:
+
             raise ValueError("Without this user")
 
     def get_boat(self, ):
@@ -195,11 +235,13 @@ class MakePhotos():
         return get_dict
 
     def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord):
-
-        response = requests.get(photo_add)
-        # 将图片内容转换为 Image 对象
-        image = Image.open(BytesIO(response.content))
-        # Opening the primary image (used in background)
+        if "https" in photo_add:
+            response = requests.get(photo_add)
+            # 将图片内容转换为 Image 对象
+            image = Image.open(BytesIO(response.content))
+            # Opening the primary image (used in background)
+        else:
+            image = Image.open(photo_add)
         img1 = self.back_ground_image.convert('RGBA')
 
         # Opening the secondary image (overlay image)
@@ -232,8 +274,8 @@ class MakePhotos():
         # 第二个参数：文字内容
         # 第三个参数：字体
         # 第四个参数：颜色RGB值
+        list = dict(addValueCoord).keys()
         for i in chars:
-            list = dict(addValueCoord).keys()
             if not (i in list) or addValueCoord[i] == '(0,0)':
                 continue
             img_draw.text(ast.literal_eval(addValueCoord[i]), chars[i], font=ttf, fill=font_color)
