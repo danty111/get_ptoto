@@ -280,6 +280,15 @@ class MakePhotos():
         for i in chars:
             if not (i in list) or addValueCoord[i] == '(0,0)':
                 continue
+            if i == "medal":
+                tup = tuple(map(float, addValueCoord[i].strip("()").split(",")))
+
+                # 对元组中的第一个值加50
+                new_tup = (tup[0] + 50,) + tup[1:]
+
+                # 将元组转换为字符串
+                addValueCoord[i] = str(new_tup)
+                print(addValueCoord[i])
             img_draw.text(ast.literal_eval(addValueCoord[i]), chars[i], font=ttf, fill=font_color)
         return self.back_ground_image
         # image.save("1.jpg")
