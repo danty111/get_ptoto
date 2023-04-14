@@ -2,7 +2,7 @@ import json
 import os
 
 from PIL import Image
-from my_project.common import IniFileEditor, MakePhotos, GetValue, Request
+from common import IniFileEditor, MakePhotos, GetValue, Request
 
 
 class MakePhoto:

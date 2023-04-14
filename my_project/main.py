@@ -9,8 +9,8 @@ import flask
 from PIL.Image import Image
 
 from flask import jsonify, abort, request, make_response
-from my_project.common import IniFileEditor
-from my_project.ptojectAPI import MakePhoto
+from common import IniFileEditor
+from ptojectAPI import MakePhoto
 from retrying import retry
 import sys
 
