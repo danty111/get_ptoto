@@ -15,7 +15,7 @@ from retrying import retry
 import sys
 
 sys.path.append(os.path.dirname(sys.path[0]))
-config_file = os.getcwd().split("/my_project")[0] + "/config.ini"
+config_file = os.path.abspath(__file__).split("/my_project")[0] + "/config.ini"
 
 
 
@@ -46,7 +46,7 @@ init_app()
 api = flask.Flask(__name__)
 
 # 配置日志记录器
-handler = RotatingFileHandler(f'{os.getcwd().split("/my_project")[0]}/my_logs/app.log', maxBytes=1024*1024*10, backupCount=5)
+handler = RotatingFileHandler(f'{os.path.abspath(__file__).split("/my_project")[0]}/my_logs/app.log', maxBytes=1024*1024*10, backupCount=5)
 handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
 handler.setFormatter(formatter)
