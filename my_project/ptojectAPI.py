@@ -1,5 +1,4 @@
 import json
-import os
 
 from PIL import Image
 from common import IniFileEditor, MakePhotos, GetValue, Request

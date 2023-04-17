@@ -223,6 +223,8 @@ class MakePhotos():
             draw.rectangle((x1, y1, x2, y2), outline='red')
             if "：" in item['text'] or ":" in item['text']:
                 item['text'] = item['text'].replace("：", "").replace(":", "")
+            if "(" in font_color:
+                font_color = eval(font_color)
             draw.text((x2 + adjust_coor[0], y2 - adjust_coor[1]), item['text'], font=font, fill=font_color)
             get_dict[item['text']] = (x2 + adjust_coor[0], y2 - adjust_coor[1])
         if save_path != "":
@@ -288,7 +290,9 @@ class MakePhotos():
 
                 # 将元组转换为字符串
                 addValueCoord[i] = str(new_tup)
-                print(addValueCoord[i])
+
+            if "(" in font_color:
+                font_color = eval(font_color)
             img_draw.text(ast.literal_eval(addValueCoord[i]), chars[i], font=ttf, fill=font_color)
         return self.back_ground_image
         # image.save("1.jpg")
