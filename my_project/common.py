@@ -220,7 +220,7 @@ class MakePhotos():
             position = item['position']
             x1, y1 = position[0][0], position[0][1]
             x2, y2 = position[2][0], position[2][1]
-            draw.rectangle((x1, y1, x2, y2), outline='red')
+            # draw.rectangle((x1, y1, x2, y2), outline='red')
             if "：" in item['text'] or ":" in item['text']:
                 item['text'] = item['text'].replace("：", "").replace(":", "")
             if "(" in font_color:
