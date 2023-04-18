@@ -240,11 +240,15 @@ class MakePhotos():
             # Opening the primary image (used in background)
         else:
             image = Image.open(photo_add)
-        img1 = self.back_ground_image.convert('RGBA')
 
-        # Opening the secondary image (overlay image)
-        imgAdd = image.convert('RGBA')
-        base_width = ast.literal_eval(add_phtoto_size)
+        try:
+            img1 = self.back_ground_image.convert('RGBA')
+
+            # Opening the secondary image (overlay image)
+            imgAdd = image.convert('RGBA')
+            base_width = ast.literal_eval(add_phtoto_size)
+        except:
+            raise Exception("获取图片失败")
         # 基本宽度与原图宽度的比例
         w_percent = base_width[0] / float(imgAdd.size[0])
         new_size = img1.size
