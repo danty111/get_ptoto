@@ -108,6 +108,7 @@ class GetValue():
             jud_visibility = _element.xpath('//*[@class="member-visibility-restriction member-visibility-r trans-03s"]')
 
             empty_ass = _element.xpath('//*[@class="empty"]')
+            empry_ass_num = _element_org.xpath('//*[@class="empty"]')
             # 兼容舰队隐藏的问题
             if len(jud_visibility) == 0 and len(empty_ass)==0:
                 #获取舰队信息
@@ -123,9 +124,9 @@ class GetValue():
                     text.append("无权限查看")
                 else:
                     text.append("organization")
-                    text.append("无主舰队")
+                    text.append("无")
                     text.append("organization_rank")
-                    text.append("无主舰队")
+                    text.append("-")
                     image_ass = "need_empty"
 
 
@@ -137,7 +138,10 @@ class GetValue():
                 image_medal = "https://robertsspaceindustries.com" + image_medal
             if "https" not in image_user:
                 image_user = "https://robertsspaceindustries.com" + image_user
-            image_ass_num = len(_element_org.xpath('//*[@class="profile-content orgs-content clearfix"]/div'))
+            if len(empry_ass_num) == 0:
+                image_ass_num = len(_element_org.xpath('//*[@class="profile-content orgs-content clearfix"]/div'))
+            else:
+                image_ass_num = 0
             list = text + tex1
             text = [x.strip() for x in list if x.strip() != '']
             text.insert(0, "id")
@@ -170,9 +174,9 @@ class GetValue():
                 if "(sid)" in new_key:
                     new_key = new_key.replace("(sid)", "sid")
                 new_dict[new_key] = get_dict[i]
-            return str(new_dict).replace("'", "\"")
+            new_dict_str = str(json.dumps(new_dict))
+            return new_dict_str
         else:
-
             raise ValueError("Without this user")
 
     def get_boat(self, ):
