@@ -51,7 +51,6 @@ class MakePhoto:
         # 获取名片信息
         msg = Request.get_json(GetValue(name).get_card())
 
-
         if msg["ass_image_path"] == "need_empty":
             msg["ass_image_path"] = self.no_fleet
         self.back_ground_image = MakePhotos(self.back_ground_image) \
