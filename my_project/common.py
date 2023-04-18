@@ -135,7 +135,7 @@ class GetValue():
             image_medal = _element.xpath('//*[@class="icon"]/img/@src')[0]
             if "https" not in image_medal:
                 image_medal = "https://robertsspaceindustries.com" + image_medal
-            elif "https" not in image_user:
+            if "https" not in image_user:
                 image_user = "https://robertsspaceindustries.com" + image_user
             image_ass_num = len(_element_org.xpath('//*[@class="profile-content orgs-content clearfix"]/div'))
             list = text + tex1
