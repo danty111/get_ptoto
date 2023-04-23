@@ -7,9 +7,9 @@ import logging
 from logging.handlers import RotatingFileHandler
 import flask
 from PIL.Image import Image
-
+from PIL import Image as Aimage
 from flask import jsonify, abort, request, make_response
-from common import IniFileEditor
+from common import IniFileEditor, GetValue, MakePhotos
 from ptojectAPI import MakePhoto
 from retrying import retry
 import sys
@@ -33,7 +33,13 @@ def init_app():
                 if "save" in value:
                     pro_path = "/my_project/my_html/"
                 else:
-                    pro_path = "/my_project/my_html/templates/"
+                    if "card" in section:
+                        model = "/card/"
+                    elif "boat" in section:
+                        model = "/boat/"
+                    else:
+                        raise Exception("配置文件错误")
+                    pro_path = "/my_project/my_html/templates" + model
                 file_path = IniFileEditor().file_path.split("/config.ini")[0]
                 value = pro_path + IniFileEditor().get_value(section, option).split("/")[-1]
                 config.set(section, option, file_path + value)
@@ -91,6 +97,12 @@ def set_card_template():
 
 
 if __name__ == '__main__':
-    api.run(port=8888, host='0.0.0.0',debug=True)
+    # api.run(port=8888, host='0.0.0.0',debug=True)
     # print(IniFileEditor().))
-
+    print(IniFileEditor().read_ini_file())
+    section = json.loads(IniFileEditor().read_ini_file())
+    card=section["card"]
+    image = Aimage.open(section["boat_parameter_dictionary"]["template_path"])
+    MakePhotos(image).recognize_text(card["ttf_path"], card["font_size"]
+                                                                          ,card["adjust_coor"]
+                                                                          ,card["font_color"],card["save_path"])

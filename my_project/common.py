@@ -3,6 +3,11 @@ import configparser
 import copy
 import json
 import os
+from typing import List, Dict, Any
+
+import numpy as np
+import requests
+from lxml import html
 
 from io import BytesIO
 from pprint import pprint
@@ -97,6 +102,7 @@ class GetValue():
         """
         res = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}")
         res_organizations = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}/organizations")
+        #判断是否存在用户
         if "You are currently venturing unknown space" not in res:
             _element = etree.HTML(res)
             _element_org = etree.HTML(res_organizations)
@@ -179,8 +185,10 @@ class GetValue():
         else:
             raise ValueError("Without this user")
 
-    def get_boat(self, ):
-        print(1)
+    def get_boat(self):
+
+        res = Request.get_html("https://www.spviewer.eu/pages/ship-performances.html?ship=drak_buccaneer")
+        _element = etree.HTML(res)
 
 
 class MakePhotos():
@@ -214,17 +222,85 @@ class MakePhotos():
         new_img = copy.copy(self.back_ground_image)
         res = ocr.ocr(new_img)
 
+        from typing import List, Dict, Any
+        import numpy as np
+
+        def merge_elements(elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+            """
+            合并OCR元素，将相邻的元素合并成一个元素，若相邻元素的X轴距离小于200且Y轴距离小于50。
+            合并后的元素的左边界取最后一个元素的左边界，右边界通过左边界加上字符的长度计算获得。
+
+            参数：
+                elements（List[Dict[str，Any]]）：OCR元素的列表，其中每个元素都是包含'text'，'score'和'position'键的字典。
+                'position'键是一个numpy数组，其形状为（4，2），表示元素的左上角，右上角，右下角和左下角的坐标。
+
+            返回：
+                List[Dict[str，Any]]：合并后的元素列表，其中每个元素都是包含'text'，'score'和'position'键的字典。
+                'position'键是一个numpy数组，其形状为（4，2），表示元素的左上角，右上角，右下角和左下角的坐标。
+            """
+
+            merged_elements = []  # 用于存储合并的元素
+            merge_buffer = []  # 用于存储待合并的元素
+            merge_flag = False  # 用于记录是否需要合并元素
+
+
+            for i, elem in enumerate(elements):
+                if merge_flag:  # 如果需要合并元素，则将当前元素与之前的元素合并
+                    merged_elem = merge_buffer.pop()
+                    merged_text = merged_elem['text'] + elem['text']
+                    merged_score = max(merged_elem['score'], elem['score'])
+                    # 计算合并后元素的左上角和右下角坐标
+                    merged_left = min(merged_elem['position'][0][0], elem['position'][0][0])
+                    merged_top = min(merged_elem['position'][0][1], elem['position'][0][1])
+                    merged_right = max(merged_elem['position'][2][0], elem['position'][2][0])
+                    merged_bottom = max(merged_elem['position'][2][1], elem['position'][2][1])
+                    # 构造新的位置数组，只保留左上角、左下角、右下角、右上角坐标
+                    merged_position = np.array([[merged_left, merged_top], [merged_left, merged_bottom],
+                                                [merged_right, merged_bottom], [merged_right, merged_top]],
+                                               dtype=np.float32)
+                    merged_elem = {'text': merged_text, 'score': merged_score, 'position': merged_position}
+                    merged_elem['merged_position'] = merged_position[-1]
+                    merge_buffer.append(merged_elem)
+                    merge_flag = False
+                else:  # 如果不需要合并元素，则直接将当前元素添加到merge_buffer中
+                    merge_buffer.append(elem)
+                if i < len(elements) - 1:  # 如果不是最后一个元素
+                    curr_right = elem['position'][1, 0]  # 当前元素的右边界
+                    next_left = elements[i + 1]['position'][0, 0]  # 下一个元素的左边界
+                    curr_bottom = elem['position'][0, 1]  # 当前元素的下边界
+                    next_top = elements[i + 1]['position'][0, 1]  # 下一个元素的上边界
+                    if next_left - curr_right < 200 and abs(curr_bottom - next_top) < 50:  # 如果相邻元素距离小于阈值，则需要合并元素
+                        merge_flag = True
+
+                if not merge_flag:  # 如果不需要合并元素，则将merge_buffer中的元素添加到merged_elements中，并清空merge_buffer
+                    merged_elem = merge_buffer[-1]
+                    merged_elem['position'][0, 0] = merge_buffer[0]['position'][0, 0]  # 左边界取第一个元素的左边界
+                    merged_elem['position'][1, 0] = merged_elem['position'][0, 0] + len(
+                        merged_elem['text']) * 20  # 右边界通过左边界加上字符的长度计算获得
+                    merged_elements.append(merged_elem)
+                    merge_buffer = []
+
+            if merge_buffer:  # 处理最后一组待合并的元素
+                merged_elem = merge_buffer[-1]
+                merged_elem['position'][0, 0] = merge_buffer[0]['position'][0, 0]  # 左边界取第一个元素的左边界
+                merged_elem['position'][1, 0] = merged_elem['position'][0, 0] + len(
+                    merged_elem['text']) * 20  # 右边界通过左边界加上字符的长度计算获得
+
+            return merged_elements
+        merged_res = merge_elements(res)
+
         # 绘制红色框框和文字
         draw = ImageDraw.Draw(new_img)
         font = ImageFont.truetype(font=font_path, size=int(font_size))
         # 获取参数位置
         get_dict = {}
         adjust_coor = eval(adjust_coor)
-        for item in res:
+        for item in merged_res:
             position = item['position']
             x1, y1 = position[0][0], position[0][1]
             x2, y2 = position[2][0], position[2][1]
-            # draw.rectangle((x1, y1, x2, y2), outline='red')
+            draw.rectangle((x1, y1, x2, y2), outline='red')
             if "：" in item['text'] or ":" in item['text']:
                 item['text'] = item['text'].replace("：", "").replace(":", "")
             if "(" in font_color:
