@@ -188,9 +188,16 @@ class GetValue():
     def get_boat(self):
 
         res = Request.get_html("https://www.spviewer.eu/pages/ship-performances.html?ship=drak_buccaneer")
+        res2 = Request.get_html("https://starcitizen.tools/Buccaneer#Pledge-0")
+        print(res2)
         _element = etree.HTML(res)
+        # 游戏价格
+        game_price = _element.xpath('//*[@id="SBuy"]/span[2]')
+        # 尺寸
+        size = _element.xpath('//*[@id="SBuy"]/span[2]')
 
 
+        # return res
 class MakePhotos():
     def __init__(self, bGImgPath):
         """
@@ -270,7 +277,7 @@ class MakePhotos():
                     next_left = elements[i + 1]['position'][0, 0]  # 下一个元素的左边界
                     curr_bottom = elem['position'][0, 1]  # 当前元素的下边界
                     next_top = elements[i + 1]['position'][0, 1]  # 下一个元素的上边界
-                    if next_left - curr_right < 200 and abs(curr_bottom - next_top) < 50:  # 如果相邻元素距离小于阈值，则需要合并元素
+                    if next_left - curr_right < 200 and abs(curr_bottom - next_top) < 15:  # 如果相邻元素距离小于阈值，则需要合并元素
                         merge_flag = True
 
                 if not merge_flag:  # 如果不需要合并元素，则将merge_buffer中的元素添加到merged_elements中，并清空merge_buffer

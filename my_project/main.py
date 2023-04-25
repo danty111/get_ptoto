@@ -64,7 +64,7 @@ api.logger.addHandler(handler)
 def card():
     try:
         name = request.args.get('name')
-        image = MakePhoto().make_card(name)
+        image = MakePhoto("card",name).make_card()
     except Exception as e:
         return abort(400, description=str(e))
 
@@ -99,10 +99,15 @@ def set_card_template():
 if __name__ == '__main__':
     # api.run(port=8888, host='0.0.0.0',debug=True)
     # print(IniFileEditor().))
-    print(IniFileEditor().read_ini_file())
-    section = json.loads(IniFileEditor().read_ini_file())
-    card=section["card"]
-    image = Aimage.open(section["boat_parameter_dictionary"]["template_path"])
-    MakePhotos(image).recognize_text(card["ttf_path"], card["font_size"]
-                                                                          ,card["adjust_coor"]
-                                                                          ,card["font_color"],card["save_path"])
+
+    # 验证船体模版识别
+    # print(IniFileEditor().read_ini_file())
+    # section = json.loads(IniFileEditor().read_ini_file())
+    # card=section["card"]
+    # image = Aimage.open(section["boat_parameter_dictionary"]["template_path"])
+    # MakePhotos(image).recognize_text(card["ttf_path"], card["font_size"]
+    #                                                                       ,card["adjust_coor"]
+    #                                                                       ,card["font_color"],card["save_path"])
+
+    #识别船坐标
+    print(GetValue("name").get_boat())
