@@ -237,6 +237,9 @@ class MakePhotos():
         return get_dict
 
     def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord,hierarchy="lower"):
+        if photo_add == 'https://robertsspaceindustries.com':
+            return self.back_ground_image
+
         if "https" in photo_add:
             response = requests.get(photo_add)
             # 将图片内容转换为 Image 对象
@@ -247,7 +250,6 @@ class MakePhotos():
 
         try:
             img1 = self.back_ground_image.convert('RGBA')
-
             # Opening the secondary image (overlay image)
             imgAdd = image.convert('RGBA')
             base_width = ast.literal_eval(add_phtoto_size)
