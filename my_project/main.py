@@ -100,7 +100,7 @@ if __name__ == '__main__':
     # api.run(port=8888, host='0.0.0.0',debug=True)
     # print(IniFileEditor().))
 
-    # 验证船体模版识别
+    # # 验证船体模版识别
     # print(IniFileEditor().read_ini_file())
     # section = json.loads(IniFileEditor().read_ini_file())
     # card=section["card"]
@@ -108,6 +108,7 @@ if __name__ == '__main__':
     # MakePhotos(image).recognize_text(card["ttf_path"], card["font_size"]
     #                                                                       ,card["adjust_coor"]
     #                                                                       ,card["font_color"],card["save_path"])
-
-    #识别船坐标
-    print(GetValue("name").get_boat())
+    # # MakePhoto("card", 'fkbaicai').make_card()
+    # # #识别船坐标
+    # GetValue("drak_cutlass_black").get_boat()
+    MakePhoto("boat", 'drak_cutlass_black').make_boat()

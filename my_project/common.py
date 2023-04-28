@@ -1,8 +1,10 @@
 import ast
 import configparser
 import copy
+import datetime
 import json
 import os
+import re
 from typing import List, Dict, Any
 
 import numpy as np
@@ -16,9 +18,7 @@ from cnocr import CnOcr
 from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
 
-config_file = os.getcwd().split("/my_project")[0]+"/config.ini"
-
-
+config_file = os.getcwd().split("/my_project")[0] + "/config.ini"
 
 
 class HttpStatus:
@@ -53,13 +53,18 @@ class Request:
         self.cookies = cookies
 
     @staticmethod
-    def get_html(path):
+    def get_html_encode(path):
         """
         直接获取页面的html使用
         :param path:
         :param vale_dict:
         :return:
         """
+        html = requests.get(path).content.decode('utf-8')
+        return html.encode('utf-8')
+
+    @staticmethod
+    def get_html(path):
         return requests.get(path).text
 
     def get(self, url, params=None):
@@ -102,13 +107,13 @@ class GetValue():
         """
         res = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}")
         res_organizations = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}/organizations")
-        #判断是否存在用户
-        if "You are currently venturing unknown space" not in res:
+        # 判断是否存在用户
+        if "You are currently venturing unknown space" not in res.decode('utf-8'):
             _element = etree.HTML(res)
             _element_org = etree.HTML(res_organizations)
-            #获取用户信息
+            # 获取用户信息
             text = _element.xpath('//*[@class="inner clearfix"]/*[@class="info"]//p//text()')
-            #获取舰队信息
+            # 获取舰队信息
             tex1 = _element.xpath("//*[@class='left-col']//text()")
 
             jud_visibility = _element.xpath('//*[@class="member-visibility-restriction member-visibility-r trans-03s"]')
@@ -116,13 +121,13 @@ class GetValue():
             empty_ass = _element.xpath('//*[@class="empty"]')
             empry_ass_num = _element_org.xpath('//*[@class="empty"]')
             # 兼容舰队隐藏的问题
-            if len(jud_visibility) == 0 and len(empty_ass)==0:
-                #获取舰队信息
+            if len(jud_visibility) == 0 and len(empty_ass) == 0:
+                # 获取舰队信息
                 image_ass = _element.xpath('//*[@class="thumb"]/a/img/@src')[0]
                 if "cdn" not in image_ass:
                     image_ass = "https://robertsspaceindustries.com/" + image_ass
             else:
-                if len(empty_ass)==0:
+                if len(empty_ass) == 0:
                     image_ass = _element.xpath("//*[@class='thumb']/img/@src")[1]
                     text.append("organization")
                     text.append("无权限查看")
@@ -134,7 +139,6 @@ class GetValue():
                     text.append("organization_rank")
                     text.append("-")
                     image_ass = "need_empty"
-
 
             # 获取用户头像
             image_user = _element.xpath("//*[@class='thumb']/img/@src")[0]
@@ -164,7 +168,7 @@ class GetValue():
                     if " " in text[i]:
                         text[i] = ''.join(text[i].split())
                     value.append(text[i])
-            #加入舰队数量
+            # 加入舰队数量
             get_dict = dict(zip(key, value))
             get_dict["fleet_quantity"] = str(image_ass_num)
             get_dict["ass_image_path"] = image_ass
@@ -186,18 +190,57 @@ class GetValue():
             raise ValueError("Without this user")
 
     def get_boat(self):
+        res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+        res2 = Request.get_html(f"https://starcitizen.tools/Buccaneer")
 
-        res = Request.get_html("https://www.spviewer.eu/pages/ship-performances.html?ship=drak_buccaneer")
-        res2 = Request.get_html("https://starcitizen.tools/Buccaneer#Pledge-0")
-        print(res2)
-        _element = etree.HTML(res)
-        # 游戏价格
-        game_price = _element.xpath('//*[@id="SBuy"]/span[2]')
-        # 尺寸
-        size = _element.xpath('//*[@id="SBuy"]/span[2]')
+        for boat_value in res1:
+            if re.search(boat_value["ClassName"], self.name, re.IGNORECASE):
+                res1 = boat_value
+                print(res1)
+                # print(json.dumps(res1).replace("'","\""))
+                break
+        else:
+            raise Exception("没有当前飞船:", self.name)
+        _element = etree.HTML(res2)
+        boat_value_dict = {}
+        # 添加船价
+        price = _element.xpath('//*[text() = "Standalone"]/following-sibling::*/text()')
+        boat_value_dict["price"] = price
+        # 添加游戏价格
+        game_price = res1["Buy"]
+        first_item = list(game_price.items())[0]
+        game_price = '{}: {}'.format(first_item[0], first_item[1])
+        game_price = common_method.decimal_de_zeroing(game_price)
+        boat_value_dict["game_price"] = common_method.amount_handled(game_price)+" aUEC"
+        #  添加船的尺寸
+        dimensions = res1["Dimensions"]
+        get_size_stage = _element.xpath("//*[@class='data-size infobox-data infobox-col2']/td/text()")
+        size = f"{dimensions['Length']}x{dimensions['Width']}x{dimensions['Height']} m{get_size_stage}"
+        size = common_method.decimal_de_zeroing(size)
+        boat_value_dict["size"] = size
+        # 添加船员
+        crew_num = _element.xpath('//*[text() = "Crew"]/following-sibling::*')
+        boat_value_dict["crew_num"] = crew_num
+        # 质量
+        quality = common_method.decimal_de_zeroing(res1["Mass"])
+        boat_value_dict["quality"] = quality
+        # 货物
+        goods = common_method.decimal_de_zeroing(res1["Cargo"])
+        boat_value_dict["goods"] = goods
+        # 储存
+        ExternalStorage = common_method.decimal_de_zeroing(res1["ExternalStorage"])
+        boat_value_dict["storage_space"] = ExternalStorage
+        # 索赔/加急
+        Insurance = res1["Insurance"]
+        StandardClaimTime = common_method().convert_seconds_to_time_format(Insurance["StandardClaimTime"])
+        ExpeditedClaimTime = common_method().convert_seconds_to_time_format(Insurance["ExpeditedClaimTime"])
+        boat_value_dict["compensation_and_expedited"] = StandardClaimTime + r'\'' + ExpeditedClaimTime
+        # 加急费用
+        expedited_charge = common_method.decimal_de_zeroing(res1["ExternalStorage"])
+        boat_value_dict["expedited_charge"] = expedited_charge
 
+        print(boat_value_dict)
 
-        # return res
 class MakePhotos():
     def __init__(self, bGImgPath):
         """
@@ -206,7 +249,6 @@ class MakePhotos():
         :param addValueCoord:
         """
         self.back_ground_image = bGImgPath
-
 
     def _judgment_Coord(self, addValueCoord):
         if type(addValueCoord) == tuple and len(addValueCoord) == 2:
@@ -251,7 +293,6 @@ class MakePhotos():
             merge_buffer = []  # 用于存储待合并的元素
             merge_flag = False  # 用于记录是否需要合并元素
 
-
             for i, elem in enumerate(elements):
                 if merge_flag:  # 如果需要合并元素，则将当前元素与之前的元素合并
                     merged_elem = merge_buffer.pop()
@@ -287,7 +328,6 @@ class MakePhotos():
                         merged_elem['text']) * 20  # 右边界通过左边界加上字符的长度计算获得
                     merged_elements.append(merged_elem)
                     merge_buffer = []
-
             if merge_buffer:  # 处理最后一组待合并的元素
                 merged_elem = merge_buffer[-1]
                 merged_elem['position'][0, 0] = merge_buffer[0]['position'][0, 0]  # 左边界取第一个元素的左边界
@@ -295,6 +335,7 @@ class MakePhotos():
                     merged_elem['text']) * 20  # 右边界通过左边界加上字符的长度计算获得
 
             return merged_elements
+
         merged_res = merge_elements(res)
 
         # 绘制红色框框和文字
@@ -319,7 +360,7 @@ class MakePhotos():
             new_img.save(save_path)
         return get_dict
 
-    def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord,hierarchy="lower"):
+    def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord, hierarchy="lower"):
         if "https" in photo_add:
             response = requests.get(photo_add)
             # 将图片内容转换为 Image 对象
@@ -356,7 +397,7 @@ class MakePhotos():
         return result_image
         # Displaying the image
 
-    def text_to_photo(self, chars, ttf_path,ttf_size, font_color,addValueCoord):
+    def text_to_photo(self, chars, ttf_path, ttf_size, font_color, addValueCoord):
         # ttfont = ImageFont.truetype("/Library/Fonts/华文细黑.ttf", 20)  # 这里我之前使用Arial.ttf时不能打出中文，用华文细黑就可以
 
         # 2. 加载字体并指定字体大小
@@ -386,8 +427,46 @@ class MakePhotos():
                 font_color = eval(font_color)
             img_draw.text(ast.literal_eval(addValueCoord[i]), chars[i], font=ttf, fill=font_color)
         return self.back_ground_image
-        # image.save("1.jpg")
 
+
+class common_method:
+
+    @staticmethod
+    def decimal_de_zeroing(value):
+        value = str(value)
+        if ".0" in value:
+            value = value.replace(".0", "")
+        return value
+
+    @staticmethod
+    def amount_handled(price):
+        """
+        价格千分位展示
+        :param price:
+        :return:
+        """
+        try:
+            price_list = price.split(": ")
+            price = price_list[0]+": {:,.2f}".format(float(price_list[1]))
+        except:
+            price = "{:,.2f}".format(float(price))
+        return common_method.decimal_de_zeroing(price)
+
+    @staticmethod
+    def convert_seconds_to_time_format(minutes):
+
+        total_seconds = round(minutes * 60)
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        if hours > 0:
+            time_format = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
+        elif minutes > 0:
+            time_format = f"{minutes:02d}m:{seconds:02d}s"
+        else:
+            time_format = f"{seconds:02d}s"
+
+        return time_format
 
 class IniFileEditor:
     def __init__(self):
@@ -397,7 +476,6 @@ class IniFileEditor:
         self.file_path = config_file
         self.config = configparser.ConfigParser()
         self.config.read(self.file_path)
-
 
     def get_value(self, section, key):
         return self.config.get(section, key)
