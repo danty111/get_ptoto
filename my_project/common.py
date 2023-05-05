@@ -222,14 +222,9 @@ class MakePhotos():
             new_img.save(save_path)
         return get_dict
 
-<<<<<<< HEAD
-    def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord,hierarchy="lower"):
-        if photo_add == 'https://robertsspaceindustries.com':
-            return self.back_ground_image
 
-=======
     def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord, hierarchy="lower"):
->>>>>>> change_ini
+
         if "https" in photo_add:
             response = requests.get(photo_add)
             # 将图片内容转换为 Image 对象
