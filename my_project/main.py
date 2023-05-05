@@ -6,13 +6,12 @@ from io import BytesIO
 import logging
 from logging.handlers import RotatingFileHandler
 import flask
-from PIL.Image import Image
-from PIL import Image as Aimage
 from flask import jsonify, abort, request, make_response
 from common import IniFileEditor, GetValue, MakePhotos
 from ptojectAPI import MakePhoto
 from retrying import retry
 import sys
+import urllib.parse
 
 sys.path.append(os.path.dirname(sys.path[0]))
 config_file = os.path.abspath(__file__).split("/my_project")[0] + "/config.ini"
@@ -82,6 +81,7 @@ def card():
 def boat():
     try:
         name = request.args.get('name')
+        name = urllib.parse.unquote(name)
         image = MakePhoto("boat",name).make_boat()
     except Exception as e:
         return abort(400, description=str(e))
