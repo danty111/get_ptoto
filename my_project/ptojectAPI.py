@@ -223,7 +223,7 @@ class GetValue():
         res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
         res2 = Request.get_html_encode(f"https://starcitizen.tools/{format_constellation_name(self.name)}")
         ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
-        data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+        # data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
 
 
         boat_response = requests.get(ship_hardpoints)
@@ -514,10 +514,10 @@ class GetValue():
         # 飞船图片
         boat_value_dict["boat_image"] = _element.xpath('//*[@class ="infobox-image"]//*[@class = "mw-file-description"]/img/@src')[0]
 
-        # 采集版本
-        match = re.search(r'gameversion="([^"]+)"', data_version)
-        if match:
-            boat_value_dict["collection_version"] = match.group(1)
+        # # 采集版本
+        # match = re.search(r'gameversion="([^"]+)"', data_version)
+        # if match:
+        #     boat_value_dict["collection_version"] = match.group(1)
 
         # 采集时间：
         current_time = datetime.now()
