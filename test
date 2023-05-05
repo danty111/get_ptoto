@@ -1,41 +1,25 @@
 import json
+import re
 from io import BytesIO
 from PIL import Image
 import requests
 
-
 import os
 
-import configparser
-
-from common import IniFileEditor, GetValue
-
-if __name__ == '__main__':
-   aaa = """{'ClassName': 'DRAK_Cutlass_Black', 'Name': 'Drake Cutlass Black', 'Description': 'Drake Interplanetary claims that the Cutlass Black is a low-cost, easy-to-maintain solution for local in-system militia units. The larger-than-average cargo hold, RIO seat and dedicated tractor mount are, the company literature insists, for facilitating search and rescue operations.', 'Career': 'Multi-Role', 'Role': 'Medium Fighter / Medium Freight', 'Size': 3, 'Cargo': 46, 'PersonalInventory': 46.0, 'ExternalStorage': 1.0, 'Crew': 3, 'WeaponCrew': 1, 'OperationsCrew': 0, 'Mass': 246577.0, 'Dimensions': {'Length': 36.0, 'Width': 26.5, 'Height': 14.0}, 'IsSpaceship': True, 'Hull': {'DamageBeforeDestruction': {'Tail': 8600.0, 'Body': 8600.0}, 'DamageBeforeDetach': {'Thruster_Main_Base_Left': 480.0, 'Thruster_Main_Left': 1200.0, 'Thruster_Main_Base_Right': 480.0, 'Thruster_Main_Right': 1200.0, 'Missile_Housing_Right': 900.0, 'Missile_Housing_Left': 900.0, 'Canopy': 6000.0, 'Wing_Left': 1880.0, 'Wing_Right': 1880.0}, 'DamageResistance': {'Physical': 58.0, 'Energy': 0.0, 'Distortion': 0.0, 'Electromagnetic': 0.0, 'Infrared': 0.0, 'CrossSection': 0.0}}, 'FlightCharacteristics': {'ScmSpeed': 165.0, 'MaxSpeed': 1114.0, 'Pitch': 30.0, 'Yaw': 30.0, 'Roll': 110.0, 'IsVtolAssisted': False, 'ThrustCapacity': {'Main': 13875058.0, 'Retro': 3998728.0, 'Vtol': 0.0, 'Maneuvering': 31862402.0}, 'AccelerationG': {'IsValidated': True, 'Main': 7.3, 'Retro': 3.3, 'Vtol': 0.0, 'Maneuvering': 13.18}, 'Capacitors': {'ThrusterCapacitorSize': 2800.0, 'CapacitorRegenPerSec': 100.0, 'CapacitorIdleCost': 20.0, 'CapacitorRegenDelay': 3.0, 'RegenerationTime': 28.0, 'X_AccelMultiplicator': 1.8, 'Y_AccelMultiplicator': 1.8, 'Z_AccelMultiplicator': 1.8, 'X_AngAccelMultiplier': 3.0, 'Y_AngAccelMultiplier': 3.0, 'Z_AngAccelMultiplier': 3.0}}, 'FuelManagement': {'FuelCapacity': 360000.0, 'FuelIntakeRate': 20.0, 'QuantumFuelCapacity': 2500.0, 'FuelBurnRatePer10KNewton': {'Main': 0.21, 'Retro': 0.21, 'Vtol': 0.0, 'Maneuvering': 3.25}, 'FuelUsagePerSecond': {'Main': 145.69, 'Retro': 41.99, 'Vtol': 0.0, 'Maneuvering': 398.28}, 'IntakeToMainFuelRatio': 13.73, 'IntakeToTankCapacityRatio': 0.005556, 'TimeForIntakesToFillTank': 18000.0, 'MainPropulsionTimeTillEmpty': 2588.25, 'ManeuveringTimeTillEmpty': 1064.36}, 'Emissions': {'Electromagnetic': {'IdleEMEmission': 10163.0, 'ActiveEMEmission': 12392.0, 'QTEMEmission': 25644.0}, 'Infrared': {'StartIREmission': 10204.0}}, 'Weapons': {'PilotWeaponRegenPool': {'RegenFillRate': 3000.0, 'AmmoLoad': 10000}, 'TurretsWeaponRegenPool': {'RegenFillRate': 3000.0, 'AmmoLoad': 20000}, 'TotalShieldHP': 9000.0}, 'Insurance': {'StandardClaimTime': 6.75, 'ExpeditedClaimTime': 2.25, 'ExpeditedCost': 3375.0}, 'Buy': {'New Deal, Lorville': 1385300.0}}"""
-   bbb = json.loads(aaa)["Buy"]
-   first_item = list(bbb.items())[0]
-
-   # 使用字符串格式化将键值对转换为所需的字符串
-   my_string = '{}: {}'.format(first_item[0], first_item[1]).replace("")
-
-   print(my_string)import json
-from io import BytesIO
-from PIL import Image
-import requests
-
-
-import os
-
-import configparser
-
-from common import IniFileEditor, GetValue
+from common import IniFileEditor, GetValue, Request, common_method
+import pandas as pd
+from openpyxl import load_workbook
 
 if __name__ == '__main__':
-   # aaa = """{'ClassName': 'DRAK_Cutlass_Black', 'Name': 'Drake Cutlass Black', 'Description': 'Drake Interplanetary claims that the Cutlass Black is a low-cost, easy-to-maintain solution for local in-system militia units. The larger-than-average cargo hold, RIO seat and dedicated tractor mount are, the company literature insists, for facilitating search and rescue operations.', 'Career': 'Multi-Role', 'Role': 'Medium Fighter / Medium Freight', 'Size': 3, 'Cargo': 46, 'PersonalInventory': 46.0, 'ExternalStorage': 1.0, 'Crew': 3, 'WeaponCrew': 1, 'OperationsCrew': 0, 'Mass': 246577.0, 'Dimensions': {'Length': 36.0, 'Width': 26.5, 'Height': 14.0}, 'IsSpaceship': True, 'Hull': {'DamageBeforeDestruction': {'Tail': 8600.0, 'Body': 8600.0}, 'DamageBeforeDetach': {'Thruster_Main_Base_Left': 480.0, 'Thruster_Main_Left': 1200.0, 'Thruster_Main_Base_Right': 480.0, 'Thruster_Main_Right': 1200.0, 'Missile_Housing_Right': 900.0, 'Missile_Housing_Left': 900.0, 'Canopy': 6000.0, 'Wing_Left': 1880.0, 'Wing_Right': 1880.0}, 'DamageResistance': {'Physical': 58.0, 'Energy': 0.0, 'Distortion': 0.0, 'Electromagnetic': 0.0, 'Infrared': 0.0, 'CrossSection': 0.0}}, 'FlightCharacteristics': {'ScmSpeed': 165.0, 'MaxSpeed': 1114.0, 'Pitch': 30.0, 'Yaw': 30.0, 'Roll': 110.0, 'IsVtolAssisted': False, 'ThrustCapacity': {'Main': 13875058.0, 'Retro': 3998728.0, 'Vtol': 0.0, 'Maneuvering': 31862402.0}, 'AccelerationG': {'IsValidated': True, 'Main': 7.3, 'Retro': 3.3, 'Vtol': 0.0, 'Maneuvering': 13.18}, 'Capacitors': {'ThrusterCapacitorSize': 2800.0, 'CapacitorRegenPerSec': 100.0, 'CapacitorIdleCost': 20.0, 'CapacitorRegenDelay': 3.0, 'RegenerationTime': 28.0, 'X_AccelMultiplicator': 1.8, 'Y_AccelMultiplicator': 1.8, 'Z_AccelMultiplicator': 1.8, 'X_AngAccelMultiplier': 3.0, 'Y_AngAccelMultiplier': 3.0, 'Z_AngAccelMultiplier': 3.0}}, 'FuelManagement': {'FuelCapacity': 360000.0, 'FuelIntakeRate': 20.0, 'QuantumFuelCapacity': 2500.0, 'FuelBurnRatePer10KNewton': {'Main': 0.21, 'Retro': 0.21, 'Vtol': 0.0, 'Maneuvering': 3.25}, 'FuelUsagePerSecond': {'Main': 145.69, 'Retro': 41.99, 'Vtol': 0.0, 'Maneuvering': 398.28}, 'IntakeToMainFuelRatio': 13.73, 'IntakeToTankCapacityRatio': 0.005556, 'TimeForIntakesToFillTank': 18000.0, 'MainPropulsionTimeTillEmpty': 2588.25, 'ManeuveringTimeTillEmpty': 1064.36}, 'Emissions': {'Electromagnetic': {'IdleEMEmission': 10163.0, 'ActiveEMEmission': 12392.0, 'QTEMEmission': 25644.0}, 'Infrared': {'StartIREmission': 10204.0}}, 'Weapons': {'PilotWeaponRegenPool': {'RegenFillRate': 3000.0, 'AmmoLoad': 10000}, 'TurretsWeaponRegenPool': {'RegenFillRate': 3000.0, 'AmmoLoad': 20000}, 'TotalShieldHP': 9000.0}, 'Insurance': {'StandardClaimTime': 6.75, 'ExpeditedClaimTime': 2.25, 'ExpeditedCost': 3375.0}, 'Buy': {'New Deal, Lorville': 1385300.0}}"""
-   # bbb = json.loads(aaa)["Buy"]
-   # first_item = list(bbb.items())[0]
-   #
-   # # 使用字符串格式化将键值对转换为所需的字符串
-   # my_string = '{}: {}'.format(first_item[0], first_item[1]).replace("")
-   aaa = r"\\"
-   print(aaa)
+
+    res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+    for boat_value in res1:
+        if re.search(boat_value["ClassName"], "aegs_avenger_warlock", re.IGNORECASE):
+            res1 = boat_value
+            break
+    else:
+        raise Exception("没有当前飞船:", "aegs_avenger_warlock")
+    ExternalStorage = res1["ExternalStorage"]
+    xternalStorage = common_method.decimal_de_zeroing(ExternalStorage)
+
+    print(xternalStorage)

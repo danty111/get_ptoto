@@ -77,11 +77,28 @@ def card():
     response.headers["Content-Type"] = "image/png"
     return response
 
+@api.route('/boat', methods=['GET'])
+@retry(stop_max_attempt_number=6, wait_fixed=300)
+def boat():
+    try:
+        name = request.args.get('name')
+        image = MakePhoto("boat",name).make_boat()
+    except Exception as e:
+        return abort(400, description=str(e))
+
+    buffer = BytesIO()
+    image.convert('RGBA').save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # 将图像作为响应内容返回
+    response = make_response(buffer.getvalue())
+    response.headers["Content-Type"] = "image/png"
+    return response
+
 
 @api.route('/set_card_temple', methods=['POST'])
 def set_card_template():
     req_data = request.get_json()
-
     if not req_data:
         abort(400, description='Missing request data')
 
@@ -97,7 +114,9 @@ def set_card_template():
 
 
 if __name__ == '__main__':
-    # api.run(port=8888, host='0.0.0.0',debug=True)
+    api.run(port=8888, host='0.0.0.0',debug=True)
+    # image = MakePhoto("boat","术士").make_boat()
+    # IniFileEditor().read_ini_file()
     # print(IniFileEditor().))
 
     # # 验证船体模版识别
@@ -111,4 +130,5 @@ if __name__ == '__main__':
     # # MakePhoto("card", 'fkbaicai').make_card()
     # # #识别船坐标
     # GetValue("drak_cutlass_black").get_boat()
-    MakePhoto("boat", 'drak_cutlass_black').make_boat()
+
+    # MakePhoto("boat", 'anvl_carrack').make_boat()
