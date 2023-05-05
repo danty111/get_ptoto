@@ -7,9 +7,9 @@ import logging
 from logging.handlers import RotatingFileHandler
 import flask
 from PIL.Image import Image
-
+from PIL import Image as Aimage
 from flask import jsonify, abort, request, make_response
-from common import IniFileEditor
+from common import IniFileEditor, GetValue, MakePhotos
 from ptojectAPI import MakePhoto
 from retrying import retry
 import sys
@@ -33,7 +33,13 @@ def init_app():
                 if "save" in value:
                     pro_path = "/my_project/my_html/"
                 else:
-                    pro_path = "/my_project/my_html/templates/"
+                    if "card" in section:
+                        model = "/card/"
+                    elif "boat" in section:
+                        model = "/boat/"
+                    else:
+                        raise Exception("配置文件错误")
+                    pro_path = "/my_project/my_html/templates" + model
                 file_path = IniFileEditor().file_path.split("/config.ini")[0]
                 value = pro_path + IniFileEditor().get_value(section, option).split("/")[-1]
                 config.set(section, option, file_path + value)
@@ -58,7 +64,25 @@ api.logger.addHandler(handler)
 def card():
     try:
         name = request.args.get('name')
-        image = MakePhoto().make_card(name)
+        image = MakePhoto("card",name).make_card()
+    except Exception as e:
+        return abort(400, description=str(e))
+
+    buffer = BytesIO()
+    image.convert('RGBA').save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # 将图像作为响应内容返回
+    response = make_response(buffer.getvalue())
+    response.headers["Content-Type"] = "image/png"
+    return response
+
+@api.route('/boat', methods=['GET'])
+@retry(stop_max_attempt_number=6, wait_fixed=300)
+def boat():
+    try:
+        name = request.args.get('name')
+        image = MakePhoto("boat",name).make_boat()
     except Exception as e:
         return abort(400, description=str(e))
 
@@ -75,7 +99,6 @@ def card():
 @api.route('/set_card_temple', methods=['POST'])
 def set_card_template():
     req_data = request.get_json()
-
     if not req_data:
         abort(400, description='Missing request data')
 
@@ -92,5 +115,20 @@ def set_card_template():
 
 if __name__ == '__main__':
     api.run(port=8888, host='0.0.0.0',debug=True)
+    # image = MakePhoto("boat","术士").make_boat()
+    # IniFileEditor().read_ini_file()
     # print(IniFileEditor().))
 
+    # # 验证船体模版识别
+    # print(IniFileEditor().read_ini_file())
+    # section = json.loads(IniFileEditor().read_ini_file())
+    # card=section["card"]
+    # image = Aimage.open(section["boat_parameter_dictionary"]["template_path"])
+    # MakePhotos(image).recognize_text(card["ttf_path"], card["font_size"]
+    #                                                                       ,card["adjust_coor"]
+    #                                                                       ,card["font_color"],card["save_path"])
+    # # MakePhoto("card", 'fkbaicai').make_card()
+    # # #识别船坐标
+    # GetValue("drak_cutlass_black").get_boat()
+
+    # MakePhoto("boat", 'anvl_carrack').make_boat()

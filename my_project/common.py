@@ -1,8 +1,16 @@
 import ast
 import configparser
 import copy
+import datetime
 import json
 import os
+import re
+from typing import List, Dict, Any
+
+import numpy as np
+import pandas as pd
+import requests
+from lxml import html
 
 from io import BytesIO
 from pprint import pprint
@@ -10,10 +18,9 @@ import requests
 from cnocr import CnOcr
 from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
+from openpyxl import load_workbook
 
-config_file = os.getcwd().split("/my_project")[0]+"/config.ini"
-
-
+config_file = os.getcwd().split("/my_project")[0] + "/config.ini"
 
 
 class HttpStatus:
@@ -48,13 +55,18 @@ class Request:
         self.cookies = cookies
 
     @staticmethod
-    def get_html(path):
+    def get_html_encode(path):
         """
         直接获取页面的html使用
         :param path:
         :param vale_dict:
         :return:
         """
+        html = requests.get(path).content.decode('utf-8')
+        return html.encode('utf-8')
+
+    @staticmethod
+    def get_html(path):
         return requests.get(path).text
 
     def get(self, url, params=None):
@@ -89,99 +101,6 @@ class GetValue():
     def __init__(self, name):
         self.name = name
 
-    def get_card(self):
-        """
-        获取名片的内容
-        :param name:查询者的名字
-        :return:
-        """
-        res = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}")
-        res_organizations = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}/organizations")
-        if "You are currently venturing unknown space" not in res:
-            _element = etree.HTML(res)
-            _element_org = etree.HTML(res_organizations)
-            #获取用户信息
-            text = _element.xpath('//*[@class="inner clearfix"]/*[@class="info"]//p//text()')
-            #获取舰队信息
-            tex1 = _element.xpath("//*[@class='left-col']//text()")
-
-            jud_visibility = _element.xpath('//*[@class="member-visibility-restriction member-visibility-r trans-03s"]')
-
-            empty_ass = _element.xpath('//*[@class="empty"]')
-            empry_ass_num = _element_org.xpath('//*[@class="empty"]')
-            # 兼容舰队隐藏的问题
-            if len(jud_visibility) == 0 and len(empty_ass)==0:
-                #获取舰队信息
-                image_ass = _element.xpath('//*[@class="thumb"]/a/img/@src')[0]
-                if "cdn" not in image_ass:
-                    image_ass = "https://robertsspaceindustries.com/" + image_ass
-            else:
-                if len(empty_ass)==0:
-                    image_ass = _element.xpath("//*[@class='thumb']/img/@src")[1]
-                    text.append("organization")
-                    text.append("无权限查看")
-                    text.append("organization_rank")
-                    text.append("无权限查看")
-                else:
-                    text.append("organization")
-                    text.append("无")
-                    text.append("organization_rank")
-                    text.append("-")
-                    image_ass = "need_empty"
-
-
-            # 获取用户头像
-            image_user = _element.xpath("//*[@class='thumb']/img/@src")[0]
-            # 获取徽章信息
-            image_medal = _element.xpath('//*[@class="icon"]/img/@src')[0]
-            if "https" not in image_medal:
-                image_medal = "https://robertsspaceindustries.com" + image_medal
-            if "https" not in image_user:
-                image_user = "https://robertsspaceindustries.com" + image_user
-            if len(empry_ass_num) == 0:
-                image_ass_num = len(_element_org.xpath('//*[@class="profile-content orgs-content clearfix"]/div'))
-            else:
-                image_ass_num = 0
-            list = text + tex1
-            text = [x.strip() for x in list if x.strip() != '']
-            text.insert(0, "id")
-            text.insert(4, "medal")
-            if len(jud_visibility) == 0 and len(empty_ass) == 0:
-                text.insert(6, "organization")
-            key, value = [], []
-            for i in range(len(text)):
-                if "\n" in text[i] or "\r" in text[i]:
-                    text[i] = text[i].replace('\n', '').replace('\r', '')
-                if i % 2 == 0:
-                    key.append(text[i])
-                else:
-                    if " " in text[i]:
-                        text[i] = ''.join(text[i].split())
-                    value.append(text[i])
-            #加入舰队数量
-            get_dict = dict(zip(key, value))
-            get_dict["fleet_quantity"] = str(image_ass_num)
-            get_dict["ass_image_path"] = image_ass
-            get_dict["medal_image_path"] = image_medal
-            get_dict["user_image_path"] = image_user
-            if "Location" in get_dict:
-                get_dict["Location"] = get_dict["Location"].replace(" ", "")
-            else:
-                get_dict["Location"] = "-"
-            new_dict = {}
-            for i in get_dict:
-                new_key = i.lower().replace(" ", "_")
-                if "(sid)" in new_key:
-                    new_key = new_key.replace("(sid)", "sid")
-                new_dict[new_key] = get_dict[i]
-            new_dict_str = str(json.dumps(new_dict))
-            return new_dict_str
-        else:
-            raise ValueError("Without this user")
-
-    def get_boat(self, ):
-        print(1)
-
 
 class MakePhotos():
     def __init__(self, bGImgPath):
@@ -191,7 +110,6 @@ class MakePhotos():
         :param addValueCoord:
         """
         self.back_ground_image = bGImgPath
-
 
     def _judgment_Coord(self, addValueCoord):
         if type(addValueCoord) == tuple and len(addValueCoord) == 2:
@@ -214,32 +132,104 @@ class MakePhotos():
         new_img = copy.copy(self.back_ground_image)
         res = ocr.ocr(new_img)
 
+        from typing import List, Dict, Any
+        import numpy as np
+
+        def merge_elements(elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+            """
+            合并OCR元素，将相邻的元素合并成一个元素，若相邻元素的X轴距离小于200且Y轴距离小于50。
+            合并后的元素的左边界取最后一个元素的左边界，右边界通过左边界加上字符的长度计算获得。
+
+            参数：
+                elements（List[Dict[str，Any]]）：OCR元素的列表，其中每个元素都是包含'text'，'score'和'position'键的字典。
+                'position'键是一个numpy数组，其形状为（4，2），表示元素的左上角，右上角，右下角和左下角的坐标。
+
+            返回：
+                List[Dict[str，Any]]：合并后的元素列表，其中每个元素都是包含'text'，'score'和'position'键的字典。
+                'position'键是一个numpy数组，其形状为（4，2），表示元素的左上角，右上角，右下角和左下角的坐标。
+            """
+
+            merged_elements = []  # 用于存储合并的元素
+            merge_buffer = []  # 用于存储待合并的元素
+            merge_flag = False  # 用于记录是否需要合并元素
+
+            for i, elem in enumerate(elements):
+                if merge_flag:  # 如果需要合并元素，则将当前元素与之前的元素合并
+                    merged_elem = merge_buffer.pop()
+                    merged_text = merged_elem['text'] + elem['text']
+                    merged_score = int(max(merged_elem['score'], elem['score']))
+                    # 计算合并后元素的左上角和右下角坐标
+                    merged_left = min(merged_elem['position'][0][0], elem['position'][0][0])
+                    merged_top = min(merged_elem['position'][0][1], elem['position'][0][1])
+                    merged_right = max(merged_elem['position'][2][0], elem['position'][2][0])
+                    merged_bottom = max(merged_elem['position'][2][1], elem['position'][2][1])
+                    # 构造新的位置数组，只保留左上角、左下角、右下角、右上角坐标
+                    merged_position = np.array([[merged_left, merged_top], [merged_left, merged_bottom],
+                                                [merged_right, merged_bottom], [merged_right, merged_top]],
+                                               dtype=np.float32)
+                    merged_position = merged_position.astype(int)
+                    merged_elem = {'text': merged_text, 'score': merged_score, 'position': merged_position}
+                    merged_elem['merged_position'] = merged_position[-1]
+                    merge_buffer.append(merged_elem)
+                    merge_flag = False
+                else:  # 如果不需要合并元素，则直接将当前元素添加到merge_buffer中
+                    merge_buffer.append(elem)
+                if i < len(elements) - 1:  # 如果不是最后一个元素
+                    curr_right = elem['position'][1, 0]  # 当前元素的右边界
+                    next_left = elements[i + 1]['position'][0, 0]  # 下一个元素的左边界
+                    curr_bottom = elem['position'][0, 1]  # 当前元素的下边界
+                    next_top = elements[i + 1]['position'][0, 1]  # 下一个元素的上边界
+                    if next_left - curr_right < 200 and abs(curr_bottom - next_top) < 15:  # 如果相邻元素距离小于阈值，则需要合并元素
+                        merge_flag = True
+
+                if not merge_flag:  # 如果不需要合并元素，则将merge_buffer中的元素添加到merged_elements中，并清空merge_buffer
+                    merged_elem = merge_buffer[-1]
+                    merged_elem['position'][0, 0] = merge_buffer[0]['position'][0, 0]  # 左边界取第一个元素的左边界
+                    merged_elem['position'][1, 0] = merged_elem['position'][0, 0] + len(
+                        merged_elem['text']) * 20  # 右边界通过左边界加上字符的长度计算获得
+                    merged_elements.append(merged_elem)
+                    merge_buffer = []
+            if merge_buffer:  # 处理最后一组待合并的元素
+                merged_elem = merge_buffer[-1]
+                merged_elem['position'][0, 0] = merge_buffer[0]['position'][0, 0]  # 左边界取第一个元素的左边界
+                merged_elem['position'][1, 0] = merged_elem['position'][0, 0] + len(
+                    merged_elem['text']) * 20  # 右边界通过左边界加上字符的长度计算获得
+
+            return merged_elements
+
+        merged_res = merge_elements(res)
+
         # 绘制红色框框和文字
         draw = ImageDraw.Draw(new_img)
         font = ImageFont.truetype(font=font_path, size=int(font_size))
         # 获取参数位置
         get_dict = {}
         adjust_coor = eval(adjust_coor)
-        for item in res:
+        for item in merged_res:
             position = item['position']
             x1, y1 = position[0][0], position[0][1]
             x2, y2 = position[2][0], position[2][1]
-            # draw.rectangle((x1, y1, x2, y2), outline='red')
+            draw.rectangle((x1, y1, x2, y2), outline='red')
             if "：" in item['text'] or ":" in item['text']:
                 item['text'] = item['text'].replace("：", "").replace(":", "")
             if "(" in font_color:
                 font_color = eval(font_color)
-            draw.text((x2 + adjust_coor[0], y2 - adjust_coor[1]), item['text'], font=font, fill=font_color)
-            get_dict[item['text']] = (x2 + adjust_coor[0], y2 - adjust_coor[1])
+            draw.text((x2 + adjust_coor[0], y2 - adjust_coor[1]), item['text'], font=font, fill='red')
+            get_dict[item['text']] = (int(x2 + adjust_coor[0]), int(y2 - adjust_coor[1]))
         if save_path != "":
             save_path = save_path + "/Image_coordinate_reference.png"
             new_img.save(save_path)
         return get_dict
 
+<<<<<<< HEAD
     def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord,hierarchy="lower"):
         if photo_add == 'https://robertsspaceindustries.com':
             return self.back_ground_image
 
+=======
+    def photo_to_photo(self, photo_add, add_phtoto_size, add_value_coord, hierarchy="lower"):
+>>>>>>> change_ini
         if "https" in photo_add:
             response = requests.get(photo_add)
             # 将图片内容转换为 Image 对象
@@ -275,11 +265,12 @@ class MakePhotos():
         return result_image
         # Displaying the image
 
-    def text_to_photo(self, chars, ttf_path,ttf_size, font_color,addValueCoord):
+    def text_to_photo(self, chars, ttf_path, ttf_size, font_color, addValueCoord):
         # ttfont = ImageFont.truetype("/Library/Fonts/华文细黑.ttf", 20)  # 这里我之前使用Arial.ttf时不能打出中文，用华文细黑就可以
 
         # 2. 加载字体并指定字体大小
         # ttf = ImageFont.load_default()  # 默认字体
+
         ttf = ImageFont.truetype(ttf_path, int(ttf_size))
         # 3. 创建绘图对象
         img_draw = ImageDraw.Draw(self.back_ground_image)
@@ -300,12 +291,80 @@ class MakePhotos():
 
                 # 将元组转换为字符串
                 addValueCoord[i] = str(new_tup)
+            if i == 'collection_version' or i == "collection_time":
+                tup = tuple(map(float, addValueCoord[i].strip("()").split(",")))
 
+                # 对元组中的第一个值加50
+                new_tup = (tup[0] - 5, tup[1] + 12)
+                # 将元组转换为字符串
+                addValueCoord[i] = str(new_tup)
+                ttf = ImageFont.truetype(ttf_path, int(ttf_size) - 10)
             if "(" in font_color:
                 font_color = eval(font_color)
-            img_draw.text(ast.literal_eval(addValueCoord[i]), chars[i], font=ttf, fill=font_color)
+            img_draw.text(ast.literal_eval(addValueCoord[i]), str(chars[i]), font=ttf, fill=font_color)
         return self.back_ground_image
-        # image.save("1.jpg")
+
+
+class common_method:
+
+    @staticmethod
+    def decimal_de_zeroing(value):
+        value = str(value)
+
+        match = re.match(r'^(\d+)\.?(\d*)$', value)
+        if match:
+            integer_part = match.group(1)
+            decimal_part = match.group(2)
+            if len(decimal_part) > 2:
+                rounded_decimal_part = round(float('.' + decimal_part), 2)
+                output = f"{integer_part}.{int(rounded_decimal_part * 100):02d}"
+            else:
+                output = value
+
+            # 去除末尾的零
+            output_parts = output.split('.')
+            if len(output_parts) == 2:
+                integer_part = output_parts[0]
+                decimal_part = output_parts[1]
+                if decimal_part == "00" or decimal_part == "0":
+                    value = integer_part + ".0"
+                else:
+                    value = integer_part + "." + decimal_part.rstrip('0').rstrip('.')
+
+        if ".0" in value:
+            value = value.replace(".0", "")
+
+        return value
+
+    @staticmethod
+    def amount_handled(price):
+        """
+        价格千分位展示
+        :param price:
+        :return:
+        """
+        try:
+            price_list = price.split(": ")
+            price = price_list[0] + ": {:.2f}W".format(float(price_list[1]) / 10000)
+        except:
+            price = "{:.2f}W".format(float(price) / 10000)
+        return common_method.decimal_de_zeroing(price)
+
+    @staticmethod
+    def convert_seconds_to_time_format(minutes):
+
+        total_seconds = round(minutes * 60)
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        if hours > 0:
+            time_format = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
+        elif minutes > 0:
+            time_format = f"{minutes:02d}m:{seconds:02d}s"
+        else:
+            time_format = f"{seconds:02d}s"
+
+        return time_format
 
 
 class IniFileEditor:
@@ -316,7 +375,6 @@ class IniFileEditor:
         self.file_path = config_file
         self.config = configparser.ConfigParser()
         self.config.read(self.file_path)
-
 
     def get_value(self, section, key):
         return self.config.get(section, key)
@@ -355,3 +413,54 @@ class IniFileEditor:
     def save(self):
         with open(self.file_path, 'w') as config_file:
             self.config.write(config_file)
+
+
+class GetExcelValue():
+    def __init__(self, name):
+        self.name = name
+
+    def read_excel(sefl, filename):
+        # 加载Excel文件
+        wb = load_workbook(filename=filename, read_only=True)
+        ws = wb.active
+
+        # 将数据读入pandas的DataFrame对象中
+        data = pd.DataFrame(ws.values)
+
+        # 将DataFrame对象转换为字典格式
+        result = {}
+        for i in range(1, len(data)):
+            key = data.iloc[i, 1]
+            value1 = data.iloc[i, 0]
+            value2 = data.iloc[i, 2]
+            value3 = data.iloc[i, 3]
+            result[key] = [value1, value2, value3]
+
+        return result
+
+    def get_boat_name(self, filename):
+        # 获取飞船名字
+        result = self.read_excel(filename)
+        result = {k: v for k, v in result.items() if k is not None}
+        found = False  # 初始化标志变量为False
+        for chinese_name_list in result:
+            if "、" in chinese_name_list or self.name in chinese_name_list:
+                for boat_name_chi in chinese_name_list.split("、"):
+                    if self.name == boat_name_chi:
+                        boat_name_en = result[chinese_name_list][0]
+                        boat_name_en = boat_name_en.lower()
+                        if " " in boat_name_en:
+                            boat_name_en = boat_name_en.replace(" ", "_")
+                            self.name = result[chinese_name_list][1] + "_" + boat_name_en
+                        else:
+                            self.name = result[chinese_name_list][1] + "_" + result[chinese_name_list][0]
+                        boat_yard = result[chinese_name_list][2]
+                        if " " in boat_yard:
+                            boat_yard = boat_yard.replace(" ", "_")
+
+                        return self.name,boat_yard
+            else:
+                continue
+
+        if not found:  # 如果为False，进行相应的处理
+            raise Exception("未找到对应的飞船" + self.name)

@@ -1,12 +1,25 @@
+import json
+import re
 from io import BytesIO
 from PIL import Image
 import requests
 
 import os
 
-import configparser
-
-from common import IniFileEditor, GetValue
+from common import IniFileEditor, GetValue, Request, common_method
+import pandas as pd
+from openpyxl import load_workbook
 
 if __name__ == '__main__':
-   print(GetValue("fkbaicai").get_card())
+
+    res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+    for boat_value in res1:
+        if re.search(boat_value["ClassName"], "aegs_avenger_warlock", re.IGNORECASE):
+            res1 = boat_value
+            break
+    else:
+        raise Exception("没有当前飞船:", "aegs_avenger_warlock")
+    ExternalStorage = res1["ExternalStorage"]
+    xternalStorage = common_method.decimal_de_zeroing(ExternalStorage)
+
+    print(xternalStorage)
