@@ -91,8 +91,8 @@ def boat():
         name = urllib.parse.unquote(name)
         config = IniFileEditor().get_value("boat","boat_name_excel")
         boat_name = GetExcelValue(name).get_boat_name(config)[0]
-        Image =os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/storage_boat/"+boat_name+".png"
-        image = Image.open(Image)
+
+        image = Image.open(os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/storage_boat/"+boat_name+".png")
     except Exception as e:
         return abort(400, description=str(e))
     buffer = BytesIO()
