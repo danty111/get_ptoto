@@ -472,4 +472,5 @@ class GetExcelValue():
                         return self.name,boat_yard,add_name,chinese_name_list.split("、")[0]
             else:
                 continue
-
+        else:
+            raise Exception("has no boat")

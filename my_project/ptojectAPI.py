@@ -1,4 +1,3 @@
-import concurrent
 import random
 import json
 import re
@@ -686,7 +685,6 @@ class GetValue():
     def get_all_boat():
 
         try:
-
             # 读取配置文件
             config = json.loads(IniFileEditor().read_ini_file())
 
@@ -715,12 +713,8 @@ class GetValue():
                     print("成功储存", i, "到", save_path)
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
-                # 在后台运行多个线程
                 futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
-
-                # 不等待所有线程执行结束，继续执行后面的代码
-                for future in concurrent.futures.as_completed(futures):
-                    pass
-            print("后面的代码可以继续执行")
+            print("所有数据执行完毕")
+            # 等待所有线程执行结束
         except Exception as e:
             raise Exception("获取图片错误",e)

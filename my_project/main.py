@@ -3,6 +3,7 @@
 import json
 import os
 import asyncio
+import threading
 from datetime import datetime
 from io import BytesIO
 import logging
@@ -63,21 +64,6 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(path
 handler.setFormatter(formatter)
 api.logger.addHandler(handler)
 
-scheduler = BackgroundScheduler()
-
-@retry(stop_max_attempt_number=5, wait_fixed=4000)
-async def get_all_boat():
-    # 执行获取所有船只信息的函数
-    # 如果函数执行失败，retrying 库会自动重试最多 5 次，每次重试之间等待 2 秒
-    await asyncio.sleep(1)  # 模拟异步执行
-    GetValue.get_all_boat()
-
-# 添加定时任务，立即执行一次，然后每隔 12 小时执行一次
-scheduler.add_job(func=get_all_boat, trigger='date', run_date=datetime.now())
-scheduler.add_job(func=get_all_boat, trigger='interval', seconds=3600*12)
-
-# 启动后台调度器
-scheduler.start()
 
 @api.route('/card', methods=['GET'])
 @retry(stop_max_attempt_number=3, wait_fixed=300)
@@ -96,6 +82,7 @@ def card():
     response = make_response(buffer.getvalue())
     response.headers["Content-Type"] = "image/png"
     return response
+
 @api.route('/boat', methods=['GET'])
 @retry(stop_max_attempt_number=3, wait_fixed=300)
 def boat():
@@ -104,7 +91,8 @@ def boat():
         name = urllib.parse.unquote(name)
         config = IniFileEditor().get_value("boat","boat_name_excel")
         boat_name = GetExcelValue(name).get_boat_name(config)[0]
-        image = Image.open(os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/storage_boat/"+boat_name+".png")
+        Image =os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/storage_boat/"+boat_name+".png"
+        image = Image.open(Image)
     except Exception as e:
         return abort(400, description=str(e))
     buffer = BytesIO()
@@ -155,9 +143,33 @@ def set_card_template():
     else:
         return abort(400, description='以下字段与接口参数不同:{}'.format(message))
 
+scheduler = BackgroundScheduler()
+
+@retry(stop_max_attempt_number=5, wait_fixed=4000)
+async def get_all_boat():
+    # 执行获取所有船只信息的函数
+    # 如果函数执行失败，retrying 库会自动重试最多 5 次，每次重试之间等待 2 秒
+    await asyncio.sleep(1)  # 模拟异步执行
+    GetValue.get_all_boat()
+
+def run_async_task():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(get_all_boat())
+    loop.close()
+
+def start_async_task():
+    thread = threading.Thread(target=run_async_task)
+    thread.start()
+
+def schedule_async_task():
+    scheduler.add_job(func=start_async_task, trigger='date', run_date=datetime.now())
+    scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 12)
+    scheduler.start()
 
 
 if __name__ == '__main__':
+    schedule_async_task()
     api.run(port=8888, host='0.0.0.0',debug=True)
     # image = MakePhoto("boat","术士").make_boat()
     # IniFileEditor().read_ini_file()
