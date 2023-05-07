@@ -142,9 +142,10 @@ class GetValue():
         res = Request().get_html(f"https://robertsspaceindustries.com/citizens/{self.name}")
         res_organizations = Request().get_html(f"https://robertsspaceindustries.com/citizens/{self.name}/organizations")
         # 判断是否存在用户
-        if "You are currently venturing unknown space" not in 'utf-8':
-            _element = etree.HTML(res)
-            _element_org = etree.HTML(res_organizations)
+        _element = etree.HTML(res)
+        _element_org = etree.HTML(res_organizations)
+        if "You are currently venturing unknown space" not in res:
+
             # 获取用户信息
             text = _element.xpath('//*[@class="inner clearfix"]/*[@class="info"]//p//text()')
             # 获取舰队信息

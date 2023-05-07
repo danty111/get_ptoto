@@ -53,7 +53,7 @@ class Request:
     def __init__(self, headers=None, cookies=None):
         self.session = requests.Session()
         self.session.keep_alive = False
-        retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
+        retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
         adapter = HTTPAdapter(max_retries=retries)
         self.session.mount('http://', adapter)
         self.session.mount('https://', adapter)

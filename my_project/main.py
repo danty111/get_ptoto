@@ -80,7 +80,7 @@ scheduler.add_job(func=get_all_boat, trigger='interval', seconds=3600*12)
 scheduler.start()
 
 @api.route('/card', methods=['GET'])
-@retry(stop_max_attempt_number=6, wait_fixed=300)
+@retry(stop_max_attempt_number=3, wait_fixed=300)
 def card():
     try:
         name = request.args.get('name')
@@ -97,7 +97,7 @@ def card():
     response.headers["Content-Type"] = "image/png"
     return response
 @api.route('/boat', methods=['GET'])
-@retry(stop_max_attempt_number=6, wait_fixed=300)
+@retry(stop_max_attempt_number=3, wait_fixed=300)
 def boat():
     try:
         name = request.args.get('name')
@@ -120,7 +120,7 @@ def boat():
 
 
 @api.route('/boa_real_time', methods=['GET'])
-@retry(stop_max_attempt_number=6, wait_fixed=300)
+@retry(stop_max_attempt_number=3, wait_fixed=300)
 def boat_real_time():
     try:
         name = request.args.get('name')
