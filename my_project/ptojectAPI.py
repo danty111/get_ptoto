@@ -242,14 +242,14 @@ class GetValue():
         boat_weapon_list = json.loads(json_data)
 
         for boat_data in res1:
-            if re.search(boat_data["ClassName"], self.add_name, re.IGNORECASE):
+            if self.add_name.lower() == boat_data["ClassName"].lower():
                 res1 = boat_data
                 break
         else:
             raise Exception("没有当前飞船:", name_list[1],self.name,self.add_name)
 
         for boat_weapon in boat_weapon_list:
-            if re.search(boat_weapon["ClassName"], self.add_name, re.IGNORECASE):
+            if self.add_name.lower() == boat_weapon["ClassName"].lower():
                 boat_weapon = boat_weapon
                 break
         else:
