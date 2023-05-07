@@ -6,7 +6,8 @@ import json
 import os
 import re
 from typing import List, Dict, Any
-
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import numpy as np
 import pandas as pd
 import requests
@@ -51,6 +52,12 @@ class HttpStatus:
 class Request:
     def __init__(self, headers=None, cookies=None):
         self.session = requests.Session()
+        self.session.keep_alive = False
+        retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount('http://', adapter)
+        self.session.mount('https://', adapter)
+
         self.headers = headers
         self.cookies = cookies
 
@@ -65,9 +72,8 @@ class Request:
         html = requests.get(path).content.decode('utf-8')
         return html.encode('utf-8')
 
-    @staticmethod
-    def get_html(path):
-        return requests.get(path).text
+    def get_html(self,path):
+        return self.session.get(path,timeout=10).text
 
     def get(self, url, params=None):
         return self._send_request('GET', url, params=params)
@@ -97,9 +103,7 @@ class Request:
         return response
 
 
-class GetValue():
-    def __init__(self, name):
-        self.name = name
+
 
 
 class MakePhotos():
@@ -425,37 +429,47 @@ class GetExcelValue():
         # 将DataFrame对象转换为字典格式
         result = {}
         for i in range(1, len(data)):
-            key = data.iloc[i, 1]
-            value1 = data.iloc[i, 0]
-            value2 = data.iloc[i, 2]
-            value3 = data.iloc[i, 3]
-            result[key] = [value1, value2, value3]
+            key = data.iloc[i, 2]
+            chinese_name = data.iloc[i, 0]
+            add_name = data.iloc[i, 1]
+            manufacturer = data.iloc[i, 3]
+            add_manufacturer = data.iloc[i, 4]
+            result[key] = [chinese_name,add_name,manufacturer, add_manufacturer]
 
         return result
 
+    @staticmethod
+    def get_boat_list(filename):
+        list = GetExcelValue("1").read_excel(filename)
+        keys = list.keys()
+        key_list = []
+        for i in keys:
+            if i == None:
+                continue
+            if "、" in i:
+                i = i.split("、")[0]
+            key_list.append(i)
+        return key_list
     def get_boat_name(self, filename):
         # 获取飞船名字
         result = self.read_excel(filename)
         result = {k: v for k, v in result.items() if k is not None}
-        found = False  # 初始化标志变量为False
         for chinese_name_list in result:
             if "、" in chinese_name_list or self.name in chinese_name_list:
                 for boat_name_chi in chinese_name_list.split("、"):
                     if self.name == boat_name_chi:
                         boat_name_en = result[chinese_name_list][0]
-                        boat_name_en = boat_name_en.lower()
+                        # boat_name_en = boat_name_en.lower()
                         if " " in boat_name_en:
                             boat_name_en = boat_name_en.replace(" ", "_")
-                            self.name = result[chinese_name_list][1] + "_" + boat_name_en
+                            self.name = boat_name_en
                         else:
-                            self.name = result[chinese_name_list][1] + "_" + result[chinese_name_list][0]
-                        boat_yard = result[chinese_name_list][2]
+                            self.name = result[chinese_name_list][0]
+                        boat_yard = result[chinese_name_list][3]
                         if " " in boat_yard:
                             boat_yard = boat_yard.replace(" ", "_")
-
-                        return self.name,boat_yard
+                        add_name = result[chinese_name_list][2] + "_" + result[chinese_name_list][1]
+                        return self.name,boat_yard,add_name,chinese_name_list.split("、")[0]
             else:
                 continue
 
-        if not found:  # 如果为False，进行相应的处理
-            raise Exception("未找到对应的飞船" + self.name)

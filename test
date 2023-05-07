@@ -1,25 +1,45 @@
 import json
 import re
+import time
 from io import BytesIO
 from PIL import Image
 import requests
 
 import os
 
-from common import IniFileEditor, GetValue, Request, common_method
+from common import IniFileEditor, Request, common_method, GetExcelValue
 import pandas as pd
 from openpyxl import load_workbook
 
+from ptojectAPI import GetValue
+
 if __name__ == '__main__':
 
-    res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
-    for boat_value in res1:
-        if re.search(boat_value["ClassName"], "aegs_avenger_warlock", re.IGNORECASE):
-            res1 = boat_value
-            break
-    else:
-        raise Exception("没有当前飞船:", "aegs_avenger_warlock")
-    ExternalStorage = res1["ExternalStorage"]
-    xternalStorage = common_method.decimal_de_zeroing(ExternalStorage)
+    # res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+    # for boat_value in res1:
+    #     if re.search(boat_value["ClassName"], "aegs_avenger_warlock", re.IGNORECASE):
+    #         res1 = boat_value
+    #         break
+    # else:
+    #     raise Exception("没有当前飞船:", "aegs_avenger_warlock")
+    # ExternalStorage = res1["ExternalStorage"]
+    # xternalStorage = common_method.decimal_de_zeroing(ExternalStorage)
+    #
+    # print(xternalStorage)
 
-    print(xternalStorage)
+    # config = json.loads(IniFileEditor().read_ini_file())
+    # list = GetExcelValue("1").read_excel(config["boat"]["boat_name_excel"])
+    # keys = list.keys()
+    # key_list = []
+    # for i in keys:
+    #     if i == None:
+    #         continue
+    #     if "、" in i:
+    #         i = i.split("、")[0]
+    #     key_list.append(i)
+    #
+    # print(key_list)
+    GetValue.get_all_boat()
+    # s = "Ares Star Fighter Inferno"
+    # s_new =  ' '.join(s.split(' ', 2)[:2]) + '_' + s.split(' ', 2)[2]
+    # print(s_new)  # 输出 "Ares Star_Fighter Inferno"

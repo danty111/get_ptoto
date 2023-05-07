@@ -1,7 +1,9 @@
+import random
 import json
 import re
+import time
 from datetime import datetime
-
+from concurrent.futures import ThreadPoolExecutor
 import requests
 from PIL import Image
 from lxml import etree
@@ -105,15 +107,24 @@ class MakePhoto:
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["boat_image"], self.template["boat_image_size"],
                             self.template["boat_image_coordinate"],hierarchy="upper")
-        boatyard_name = GetExcelValue(self.name).get_boat_name(self.config[self.interface]["boat_name_excel"])[1]
+        boatyard_name = GetExcelValue(self.name).get_boat_name(self.config[self.interface]["boat_name_excel"])
         self.back_ground_image = MakePhotos(self.back_ground_image) \
-            .photo_to_photo(self.section["shipyard_file"]+f"/{boatyard_name}.png", self.template['shipyard_size'],
+            .photo_to_photo(self.section["shipyard_file"]+f"/{boatyard_name[1]}.png", self.template['shipyard_size'],
                             self.template["shipyard_coordinate"], hierarchy="upper")
         self.back_ground_image = MakePhotos(self.back_ground_image).text_to_photo(msg, self.section["ttf_path"]
                                                                                   , self.section["font_size"],
                                                                                   self.section["font_color"],
                                                                                   self.template)
-        return self.back_ground_image
+        self.back_ground_image = MakePhotos(self.back_ground_image).text_to_photo({"boat_name_coordinate":msg["boat_name"]}, self.section["ttf_path"]
+                                                                                  , self.section["boat_name_size"],
+                                                                                  self.section["font_color"],
+                                                                                  {"boat_name_coordinate":self.section["boat_name_coordinate"]})
+        self.back_ground_image = MakePhotos(self.back_ground_image).text_to_photo({"boat_name_coordinate":msg["boat_en_name"]}, self.section["ttf_path"]
+                                                                                  , self.section["boat_name_en_size"],
+                                                                                  self.section["font_color"],
+                                                                                  {"boat_name_coordinate":self.section["boat_name_en_coordinate"]})
+
+        return self.back_ground_image,boatyard_name[0]
 
 
 class GetValue():
@@ -126,8 +137,9 @@ class GetValue():
         :param name:查询者的名字
         :return:
         """
-        res = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}")
-        res_organizations = Request.get_html(f"https://robertsspaceindustries.com/citizens/{self.name}/organizations")
+
+        res = Request().get_html(f"https://robertsspaceindustries.com/citizens/{self.name}")
+        res_organizations = Request().get_html(f"https://robertsspaceindustries.com/citizens/{self.name}/organizations")
         # 判断是否存在用户
         if "You are currently venturing unknown space" not in 'utf-8':
             _element = etree.HTML(res)
@@ -212,70 +224,91 @@ class GetValue():
 
     def get_boat(self,filename):
         name_list = GetExcelValue(self.name).get_boat_name(filename)
+        if name_list == None:
+            raise Exception("船表格里没有当前飞船",self.name)
         self.name = name_list[0]
-        def format_constellation_name(s):
-            parts = s.split("_")  # 使用 "_" 进行分割
-            parts = [p.capitalize() for p in parts]  # 将每个单词的首字母大写
-            s = "_".join(parts[1:])
-            return s
+        self.add_name = name_list[2]
 
 
         res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
-        res2 = Request.get_html_encode(f"https://starcitizen.tools/{format_constellation_name(self.name)}")
+        res2 = Request.get_html_encode(f"https://starcitizen.tools/{self.name}")
         ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
-        # data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+        data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
 
 
         boat_response = requests.get(ship_hardpoints)
         json_data = boat_response.content.decode('utf-8-sig')
-        boat_weapon = json.loads(json_data)
+        boat_weapon_list = json.loads(json_data)
 
-        for boat_value in res1:
-            if re.search(boat_value["ClassName"], self.name, re.IGNORECASE):
-                res1 = boat_value
+        for boat_data in res1:
+            if re.search(boat_data["ClassName"], self.add_name, re.IGNORECASE):
+                res1 = boat_data
                 break
         else:
-            raise Exception("没有当前飞船:", self.name)
+            raise Exception("没有当前飞船:", name_list[1],self.name,self.add_name)
 
-        for boat_value in boat_weapon:
-            if re.search(boat_value["ClassName"], self.name, re.IGNORECASE):
-                boat_value = boat_value
+        for boat_weapon in boat_weapon_list:
+            if re.search(boat_weapon["ClassName"], self.add_name, re.IGNORECASE):
+                boat_weapon = boat_weapon
                 break
         else:
-            raise Exception("没有当前飞船:", self.name)
+            raise Exception("没有当前飞船:", name_list[1],self.name,self.add_name)
 
         _element = etree.HTML(res2)
+        none_value = _element.xpath('//*[@id="This_page_is_avaliable_on_sale_on_the_Privateer_legally."]')
+        if len(none_value) != 0:
+            raise Exception("当前非常查找错误"+self.name)
+
+
         boat_value_dict = {}
-        # 添加船价
-        price = _element.xpath('//*[text() = "Standalone"]/following-sibling::*/text()')[0]
-
-        boat_value_dict["price"] = price
-        # 添加游戏价格
-
-        game_price = res1["Buy"]
-        first_item = list(game_price.items())[0]
-        selling_address={"Astro Armada":'奥里森','Area 18':'18区','Lorville':"罗威尔"}
-        address =''
-        if "," in first_item[0]:
-            address_list = first_item[0].split(",")
-            for i in address_list:
-                i = i.strip()
-                if i in selling_address:
-                     address += selling_address[i]+","
-            address = address[: -1]
+        if "_" in self.name:
+            boat_name = self.name.replace("_"," ")
         else:
-            address = first_item[0]
-        price = common_method.amount_handled(first_item[1])
-        game_price = '{} aUEC ({}) '.format(price, address)
-        game_price = common_method.decimal_de_zeroing(game_price)
+            boat_name = self.name
+        # 船名
 
-        boat_value_dict["game_price"] = game_price
+        boat_value_dict["boat_name"] = name_list[3]
+        boat_value_dict["boat_en_name"] = boat_name.upper()
+        # 添加船价
+        try:
+            price = _element.xpath('//*[text() = "Standalone"]/following-sibling::*/text()')[0]
+
+            boat_value_dict["price"] = price
+        except:
+            boat_value_dict["price"] = "无法购买"
+        # 添加游戏价格
+        if "Buy" in res1:
+            game_price = res1["Buy"]
+            first_item = list(game_price.items())[0]
+            selling_address={"Astro Armada":'奥里森','Area 18':'18区','Lorville':"罗威尔"}
+            address =''
+            if "," in first_item[0]:
+                address_list = first_item[0].split(",")
+                for i in address_list:
+                    i = i.strip()
+                    if i in selling_address:
+                         address += selling_address[i]+","
+                address = address[: -1]
+            else:
+                address = first_item[0]
+            price = common_method.amount_handled(first_item[1])
+            game_price = '{} aUEC ({}) '.format(price, address)
+            game_price = common_method.decimal_de_zeroing(game_price)
+
+            boat_value_dict["game_price"] = game_price
+        else:
+            boat_value_dict["game_price"] = "无法aUEC购买"
         #  添加船的尺寸
+
         dimensions = res1["Dimensions"]
-        get_size_stage = _element.xpath("//*[@class='data-size infobox-data infobox-col2']/td/text()")[0]
-        size = f"{dimensions['Length']}x{dimensions['Width']}x{dimensions['Height']} m{get_size_stage}"
-        size = common_method.decimal_de_zeroing(size)
-        boat_value_dict["size"] = size
+        get_size_stage = _element.xpath("//*[@class='data-size infobox-data infobox-col2']/td/text()")
+        if get_size_stage != []:
+            get_size_stage = get_size_stage[0]
+            size = f"{dimensions['Length']}x{dimensions['Width']}x{dimensions['Height']} m{get_size_stage}"
+            size = common_method.decimal_de_zeroing(size)
+            boat_value_dict["size"] = size
+        else:
+            boat_value_dict["size"] = "-"
         # 添加船员
         crew_num = _element.xpath('//*[text() = "Crew"]/following-sibling::*/text()')[0]
         if "–" in crew_num:
@@ -303,62 +336,83 @@ class GetValue():
         expedited_charge = common_method.decimal_de_zeroing(Insurance["ExpeditedCost"])
         boat_value_dict["expedited_charge"] = expedited_charge + " aUEC"
         # XYZ
-        FlightCharacteristics  = res1["FlightCharacteristics"]
-        pitch_yaw_roll = common_method.decimal_de_zeroing(FlightCharacteristics["Pitch"])+"/S、"+\
-                         common_method.decimal_de_zeroing(FlightCharacteristics["Yaw"])+ "/S、"+\
-                         common_method.decimal_de_zeroing(FlightCharacteristics["Roll"])+ "/S"
-        boat_value_dict["pitch_yaw_roll"] = pitch_yaw_roll
+        if "FlightCharacteristics" in res1:
+            FlightCharacteristics  = res1["FlightCharacteristics"]
+            pitch_yaw_roll = common_method.decimal_de_zeroing(FlightCharacteristics["Pitch"])+"/S、"+\
+                             common_method.decimal_de_zeroing(FlightCharacteristics["Yaw"])+ "/S、"+\
+                             common_method.decimal_de_zeroing(FlightCharacteristics["Roll"])+ "/S"
+            boat_value_dict["pitch_yaw_roll"] = pitch_yaw_roll
+        else:
+            boat_value_dict["pitch_yaw_roll"] = "-"
         # 氢油箱
-        FuelManagement = res1["FuelManagement"]
-        hydrogen_mailbox = FuelManagement["FuelCapacity"]
-        boat_value_dict["hydrogen_mailbox"] = common_method.decimal_de_zeroing(hydrogen_mailbox) + " L"
-        # 量子油箱
-        quantum_mailbox = FuelManagement["QuantumFuelCapacity"]
-        boat_value_dict["quantum_mailbox"] = common_method.decimal_de_zeroing(quantum_mailbox) + " L"
+        if 'FuelManagement' in res1:
+            FuelManagement = res1["FuelManagement"]
+            hydrogen_mailbox = FuelManagement["FuelCapacity"]
+            boat_value_dict["hydrogen_mailbox"] = common_method.decimal_de_zeroing(hydrogen_mailbox) + " L"
+            # 量子油箱
+            quantum_mailbox = FuelManagement["QuantumFuelCapacity"]
+            boat_value_dict["quantum_mailbox"] = common_method.decimal_de_zeroing(quantum_mailbox) + " L"
+        else:
+            boat_value_dict["hydrogen_mailbox"] = "-"
+            boat_value_dict["quantum_mailbox"] = "-"
 
         # 标准速度
-
-        standard_speed =_element.xpath('//*[text() = "Combat speed"]/following-sibling::*/text()')[0]
-        boat_value_dict["standard_speed"] = standard_speed
+        try:
+            standard_speed =_element.xpath('//*[text() = "Combat speed"]/following-sibling::*/text()')[0]
+            boat_value_dict["standard_speed"] = standard_speed
+        except:
+            boat_value_dict["standard_speed"] = "-"
 
         #最高速度
-        maximum_speed = _element.xpath('//*[text() = "Max speed"]/following-sibling::*/text()')[0]
-        boat_value_dict["maximum_speed"] = maximum_speed
+        try:
+            maximum_speed = _element.xpath('//*[text() = "Max speed"]/following-sibling::*/text()')
+            if maximum_speed != []:
+                maximum_speed = maximum_speed[0]
+            else:
+                maximum_speed = res1['FlightCharacteristics']['MaxSpeed']
+            boat_value_dict["maximum_speed"] = maximum_speed
+        except:
+            boat_value_dict["maximum_speed"] = "-"
         # 主引擎
-        AccelerationG = res1["FlightCharacteristics"]["AccelerationG"]
-        Y_AccelMultiplicator = res1["FlightCharacteristics"]["Capacitors"]["Y_AccelMultiplicator"]
-        main_engine = common_method.decimal_de_zeroing(AccelerationG["Main"])
-        boat_value_dict["main_engine"] = main_engine+f' G（加力{common_method.decimal_de_zeroing(float(AccelerationG["Main"])*float(Y_AccelMultiplicator))} G）'
-        # 反推引擎
-        reverse_thrust_engine = common_method.decimal_de_zeroing(AccelerationG["Retro"])
+        try:
+            AccelerationG = res1["FlightCharacteristics"]["AccelerationG"]
+            Y_AccelMultiplicator = res1["FlightCharacteristics"]["Capacitors"]["Y_AccelMultiplicator"]
+            main_engine = common_method.decimal_de_zeroing(AccelerationG["Main"])
+            boat_value_dict["main_engine"] = main_engine+f' G（加力{common_method.decimal_de_zeroing(float(AccelerationG["Main"])*float(Y_AccelMultiplicator))} G）'
+            # 反推引擎
+            reverse_thrust_engine = common_method.decimal_de_zeroing(AccelerationG["Retro"])
 
-        boat_value_dict["reverse_thrust_engine"] = reverse_thrust_engine+f' G（加力{ common_method.decimal_de_zeroing(float(reverse_thrust_engine)*float(Y_AccelMultiplicator))} G）'
+            boat_value_dict["reverse_thrust_engine"] = reverse_thrust_engine + f' G（加力{common_method.decimal_de_zeroing(float(reverse_thrust_engine) * float(Y_AccelMultiplicator))} G）'
+
+        except:
+            boat_value_dict["main_engine"] = "-"
+            boat_value_dict["reverse_thrust_engine"] = "-"
         # DPS武器
         try:
             boat_DPS = 0
-            weapon_list = boat_value['Hardpoints']['Weapons']['PilotWeapons']['InstalledItems']
+            weapon_list = boat_weapon['Hardpoints']['Weapons']['PilotWeapons']['InstalledItems']
             for weapon in weapon_list:
-                DPS = weapon["SubWeapons"][0]["BurstDPS"].values()
-                DPS = next(iter(DPS))
-                boat_DPS += DPS
+                if "SubWeapons" in weapon:
+                    DPS = weapon["SubWeapons"][0]["BurstDPS"].values()
+                    DPS = next(iter(DPS))
+                    boat_DPS += DPS
+                elif "BurstDPS" in weapon:
+                    DPS = weapon["BurstDPS"].values()
+                    DPS = next(iter(DPS))
+                    boat_DPS += DPS
             boat_value_dict["dps_weapon"] = common_method.decimal_de_zeroing(boat_DPS) + " DPS"
         except:
             boat_value_dict["dps_weapon"] = "-"
         # DPS导弹
         try:
             dps_missile = 0
-            for boat_value in boat_weapon:
-                if re.search(boat_value["ClassName"], self.name, re.IGNORECASE):
-                    MissileRacks = boat_value['Hardpoints']['Weapons']['MissileRacks']["InstalledItems"]
-                    for i in MissileRacks:
-                        test = i['Missiles']
-                        for missile in test:
-                            DPS = missile["Damage"].values()
-                            DPS = next(iter(DPS))
-                            dps_missile += DPS
-                    break
-            else:
-                raise Exception("没有当前飞船:", self.name)
+            MissileRacks = boat_weapon['Hardpoints']['Weapons']['MissileRacks']["InstalledItems"]
+            for i in MissileRacks:
+                test = i['Missiles']
+                for missile in test:
+                    DPS = missile["Damage"].values()
+                    DPS = next(iter(DPS))
+                    dps_missile += DPS
             boat_value_dict["dps_missile"] = common_method.decimal_de_zeroing(int(dps_missile)) + " DPS"
         except:
             boat_value_dict["dps_missile"] = "-"
@@ -373,14 +427,24 @@ class GetValue():
             body_blood_volume += i
         boat_value_dict["body_blood_volume"] = common_method.decimal_de_zeroing(body_blood_volume) + " HP"
         # 机头\机身
-        try:
-            Canopy = common_method.decimal_de_zeroing(res1["Hull"]["DamageBeforeDetach"]["Canopy"])
-        except:
+        Canopy = res1["Hull"]["DamageBeforeDestruction"]
+        if "Nose" in Canopy:
+            Canopy = Canopy["Nose"]
+        elif "nose" in Canopy:
+            Canopy = Canopy["nose"]
+        else:
             Canopy = "-"
-        try:
-            Body = common_method.decimal_de_zeroing(res1["Hull"]['DamageBeforeDestruction']['Body'])
-        except:
-            Body = "-"
+        Canopy = common_method.decimal_de_zeroing(Canopy)
+
+        Body = res1["Hull"]["DamageBeforeDestruction"]
+        if "Body" in Body:
+            Body = Body['Body']
+        elif "body" in Body:
+            Body = Body['body']
+        else:
+            Body = '-'
+        Body = common_method.decimal_de_zeroing(Body)
+
         boat_value_dict["nose_and_fuselage"] = Canopy + " HP"+"\\"+Body + " HP"
         # 雷达电磁
         electromagnetic_radar = common_method.decimal_de_zeroing(res1['Emissions']['Electromagnetic']['IdleEMEmission'])
@@ -390,80 +454,88 @@ class GetValue():
         infrared_radar = common_method.decimal_de_zeroing(res1['Emissions']['Infrared']['StartIREmission'])
         boat_value_dict["infrared_radar"] = infrared_radar + " IR"
         # 量子引擎
-        quantum_engine = _element.xpath('//*[text() = "Quantum drive"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                         _element.xpath('//*[text() = "Quantum drive"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
-        boat_value_dict["quantum_engine"] = quantum_engine
-
+        try:
+            quantum_engine = _element.xpath('//*[text() = "Quantum drive"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+                             _element.xpath('//*[text() = "Quantum drive"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            boat_value_dict["quantum_engine"] = quantum_engine
+        except:
+            boat_value_dict["quantum_engine"] = "-"
         # 越迁引擎
-        transition_engine = _element.xpath('//*[text() = "Jump drive"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                            _element.xpath(
-                                '//*[text() = "Jump drive"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
-        boat_value_dict["transition_engine"] = transition_engine
+        try:
+            transition_engine = _element.xpath('//*[text() = "Jump drive"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+                                _element.xpath(
+                                    '//*[text() = "Jump drive"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            boat_value_dict["transition_engine"] = transition_engine
+        except:
+            boat_value_dict["transition_engine"] = "-"
 
-        # 发电机
-        generator = _element.xpath('//*[text() = "Power plant"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                    _element.xpath(
-                        '//*[text() = "Power plant"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
-        boat_value_dict["generator"] = generator
-
+        # 发电:
+        try:
+            generator = _element.xpath('//*[text() = "Power plant"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+                        _element.xpath(
+                            '//*[text() = "Power plant"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            boat_value_dict["generator"] = generator
+        except:
+            boat_value_dict["generator"] = "-"
+        try:
         # 冷却器
-        cooler = _element.xpath('//*[text() = "Cooler"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-        _element.xpath('//*[text() = "Cooler"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
-        boat_value_dict["cooler"] = cooler
-
-        # 护盾
-        shield = _element.xpath('//*[text() = "Shield generator"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                 _element.xpath(
-                     '//*[text() = "Shield generator"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
-        boat_value_dict["shield"] = shield
-
-        # 雷达
-        radar = _element.xpath('//*[text() = "Radar"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                         _element.xpath('//*[text() = "Radar"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
-        boat_value_dict["radar"] = radar
-
-       # 电脑
-        computer = _element.xpath('//*[text() = "Computer"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                            _element.xpath(
-                                '//*[text() = "Computer"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
-        boat_value_dict["computer"] = computer
-        # 自毁时间
-        self_destruct_time = boat_value['Hardpoints']['Components']['Avionics']['SelfDestruct']['InstalledItems'][0][
-            'SelfDestructionType']
-        self_destruct_time = self_destruct_time.split('_')[-1]
-        boat_value_dict["self_destruct_time"] = self_destruct_time
+            cooler = _element.xpath('//*[text() = "Cooler"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+            _element.xpath('//*[text() = "Cooler"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            boat_value_dict["cooler"] = cooler
+        except:
+            boat_value_dict["cooler"] = "-"
+        try:
+            # 护盾
+            shield = _element.xpath('//*[text() = "Shield generator"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+                     _element.xpath(
+                         '//*[text() = "Shield generator"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            boat_value_dict["shield"] = shield
+        except:
+            boat_value_dict["shield"] = "-"
+        try:
+            # 雷达
+            radar = _element.xpath('//*[text() = "Radar"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+                             _element.xpath('//*[text() = "Radar"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            boat_value_dict["radar"] = radar
+        except:
+            boat_value_dict["radar"] = "-"
+        try:
+           # 电脑
+            computer = _element.xpath('//*[text() = "Computer"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+                                _element.xpath(
+                                    '//*[text() = "Computer"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            boat_value_dict["computer"] = computer
+        except:
+            boat_value_dict["computer"] = "-"
+        try:
+            # 自毁时间
+            self_destruct_time = boat_weapon['Hardpoints']['Components']['Avionics']['SelfDestruct']['InstalledItems'][0][
+                'SelfDestructionType']
+            self_destruct_time = self_destruct_time.split('_')[-1]
+            boat_value_dict["self_destruct_time"] = self_destruct_time
+        except:
+            boat_value_dict["self_destruct_time"] = "-"
         def process_boat_value(weapon_parameter):
 
             if weapon_parameter == "weapon":
                 try:
-                    grade_list = boat_value['Hardpoints']['Weapons']['PilotWeapons']['InstalledItems']
+                    grade_list = boat_weapon['Hardpoints']['Weapons']['PilotWeapons']['InstalledItems']
                 except:
                     boat_value_dict[weapon_parameter] = "-"
                     return
             elif weapon_parameter == "manned_turret":
                 try:
-                    grade_list = boat_value['Hardpoints']['Weapons']['MannedTurrets']['InstalledItems']
+                    grade_list = boat_weapon['Hardpoints']['Weapons']['MannedTurrets']['InstalledItems']
                 except:
                     boat_value_dict[weapon_parameter] = "-"
                     return
-            elif weapon_parameter == "remote_control_turret":
-                try:
-                    grade_list = boat_value['Hardpoints']['Weapons']['RemoteTurrets']['InstalledItems']
-                except:
-                    boat_value_dict[weapon_parameter] = "-"
-                    return
-            elif weapon_parameter == "missile":
-                try:
-                    grade_list = boat_value['Hardpoints']['Weapons']['MissileRacks']['InstalledItems']
-                except:
-                    boat_value_dict[weapon_parameter] = "-"
-                    return
+
             elif "multifunctional" in weapon_parameter :
                 try:
                     if weapon_parameter == "multifunctional_salvage":
-                        grade_list = boat_value['Hardpoints']['Weapons']['SalvageHardpoints']['CrewControlled']['InstalledItems']
+                        grade_list = boat_weapon['Hardpoints']['Weapons']['SalvageHardpoints']['CrewControlled']['InstalledItems']
                     elif weapon_parameter == "multifunctional_utility":
-                        grade_list = boat_value['Hardpoints']['Weapons']['UtilityHardpoints']['InstalledItems']
+                        grade_list = boat_weapon['Hardpoints']['Weapons']['UtilityHardpoints']['InstalledItems']
                     else:
                         pass
                 except:
@@ -477,15 +549,18 @@ class GetValue():
             weapon_dict = {}
             for item in grade_list:
                 size = item['Size']
+
+                if weapon_parameter == "weapon":
+                    if'SubWeapons' in item:
+                        if 'SubWeapons' in item:
+                            size = item['SubWeapons'][0]["Size"]
+                        weapon_dict[size] = True
+                    else:
+                        pass
                 if size in size_count:
                     size_count[size] += 1
                 else:
                     size_count[size] = 1
-                if weapon_parameter == "weapon":
-                    sub_weapons = item['SubWeapons']
-                    if sub_weapons:
-                        weapon_dict[size] = True
-
                 # 以特定格式打印结果
             weapon = ''
             for size in size_count:
@@ -493,18 +568,97 @@ class GetValue():
                     count = size_count[size]
                     if weapon:
                         weapon += '+'
-                    weapon += f'{count}xS{size}'
+                    weapon += f'S{size}x{count}'
                     if size in weapon_dict and weapon_parameter == "weapon":
                         weapon += '(可动)'
             if "multifunctional" in weapon_parameter:
                 return weapon
 
             boat_value_dict[weapon_parameter] = weapon
-        #
+        # 武器
         process_boat_value("weapon")
-        process_boat_value("manned_turret")
-        process_boat_value("remote_control_turret")
-        process_boat_value("missile")
+
+        def get_grade_num(file):
+            aaa_dict = {}
+            for i in file:
+                temporary = {}
+                for sub_weapon in i['SubWeapons']:
+                    if sub_weapon['Size'] in temporary:
+                        temporary[sub_weapon["Size"]] += 1
+                    else:
+                        temporary[sub_weapon["Size"]] = 1
+                for num in temporary:
+                    name = f"{temporary[num]}*S{num}"
+
+                    if name in aaa_dict:
+                        aaa_dict[name] += 1
+                    else:
+                        aaa_dict[name] = 1
+            result_value = ""
+            for i in aaa_dict:
+                result_value += f"{i}*{aaa_dict[i]}+"
+            result_value = result_value[:-1]
+            return result_value
+        try:
+            # 载人炮塔
+            manned_turret = get_grade_num(boat_weapon['Hardpoints']['Weapons']['MannedTurrets']['InstalledItems'])
+            boat_value_dict["manned_turret"] = manned_turret
+        except:
+            boat_value_dict["manned_turret"] = "-"
+        # 遥控炮塔
+        try:
+            grade_list = boat_weapon['Hardpoints']['Weapons']['RemoteTurrets']['InstalledItems']
+            remote_control_turret = get_grade_num(grade_list)
+            boat_value_dict["remote_control_turret"] = remote_control_turret
+        except:
+            boat_value_dict["remote_control_turret"] = "-"
+        try:
+            # 导弹
+            missile_dice = {}
+            grade_list = boat_weapon['Hardpoints']['Weapons']['MissileRacks']['InstalledItems']
+            for missile_rack in grade_list:
+                if 'Missiles' in missile_rack:
+                    for missile in missile_rack['Missiles']:
+                        if missile["Size"] in missile_dice:
+                            missile_dice[missile["Size"]] += 1
+                        else:
+                            missile_dice[missile["Size"]] = 1
+                else:
+                    continue
+            result = ""
+            for i in missile_dice:
+                result += f"S{i}*{missile_dice[i]}+"
+            result = result[:-1]
+        except:
+            result = ""
+        try:
+            # 炸弹
+            missile_dice = {}
+            grade_list = boat_weapon['Hardpoints']['Weapons']['BombRacks']['InstalledItems']
+            for missile_rack in grade_list:
+                if 'Bombs' in missile_rack:
+                    for missile in missile_rack['Bombs']:
+                        if missile["Size"] in missile_dice:
+                            missile_dice[missile["Size"]] += 1
+                        else:
+                            missile_dice[missile["Size"]] = 1
+                else:
+                    continue
+            Bombs_result = ""
+            for i in missile_dice:
+                Bombs_result += f"S{i}*{missile_dice[i]}+"
+            Bombs_result = Bombs_result[:-1]
+            boat_value_dict["missile"] = Bombs_result
+        except:
+            Bombs_result = ""
+        if result == "" or Bombs_result == "":
+            if  result == "" and Bombs_result == "":
+                boat_value_dict["missile"] = "-"
+            else:
+                boat_value_dict["missile"] = result+Bombs_result
+        else:
+            boat_value_dict["missile"] = result +"+"+ Bombs_result
+        # 多功能
         try:
             aaa = process_boat_value("multifunctional_salvage")
             bbb = process_boat_value("multifunctional_utility")
@@ -514,10 +668,10 @@ class GetValue():
         # 飞船图片
         boat_value_dict["boat_image"] = _element.xpath('//*[@class ="infobox-image"]//*[@class = "mw-file-description"]/img/@src')[0]
 
-        # # 采集版本
-        # match = re.search(r'gameversion="([^"]+)"', data_version)
-        # if match:
-        #     boat_value_dict["collection_version"] = match.group(1)
+        # 采集版本
+        match = re.search(r'gameversion="([^"]+)"', data_version)
+        if match:
+            boat_value_dict["collection_version"] = match.group(1)
 
         # 采集时间：
         current_time = datetime.now()
@@ -526,3 +680,43 @@ class GetValue():
 
         return boat_value_dict
 
+    @staticmethod
+    def get_all_boat():
+
+        try:
+
+            # 读取配置文件
+            config = json.loads(IniFileEditor().read_ini_file())
+
+            # 获取船只名称列表
+            name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
+
+            # 打乱列表顺序
+            random.shuffle(name_list)
+
+            # 将列表随机分成 20 份
+            num_threads = 20
+            chunk_size = len(name_list) // num_threads
+            chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+
+            # 如果有余数，将余数分配到最后一个分片中
+            if len(name_list) % num_threads != 0:
+                chunks[-1] += name_list[-(len(name_list) % num_threads):]
+
+            # 执行多线程任务
+            def save_image_names(names):
+                for i in names:
+                    image_file, image_name = MakePhoto("boat", i).make_boat()
+                    save_path = config['boat']['boat_name_excel'].split("boat")[
+                                    0] + "storage_boat/" + image_name + ".png"
+                    image_file.save(save_path, "PNG")
+                    print("成功储存", i, "到", save_path)
+
+            with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+
+            # 等待所有线程执行结束
+            for future in futures:
+                future.result()
+        except Exception as e:
+            raise Exception("获取图片错误",e)

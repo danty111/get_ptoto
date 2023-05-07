@@ -6,12 +6,14 @@ from io import BytesIO
 import logging
 from logging.handlers import RotatingFileHandler
 import flask
+from PIL import Image
 from flask import jsonify, abort, request, make_response
-from common import IniFileEditor, GetValue, MakePhotos
-from ptojectAPI import MakePhoto
+from common import IniFileEditor, MakePhotos, GetExcelValue
+from ptojectAPI import MakePhoto, GetValue
 from retrying import retry
 import sys
 import urllib.parse
+from apscheduler.schedulers.background import BackgroundScheduler
 
 sys.path.append(os.path.dirname(sys.path[0]))
 config_file = os.path.abspath(__file__).split("/my_project")[0] + "/config.ini"
@@ -49,6 +51,8 @@ def init_app():
 init_app()
 
 api = flask.Flask(__name__)
+api.debug = True
+
 
 # 配置日志记录器
 handler = RotatingFileHandler(f'{os.path.abspath(__file__).split("/my_project")[0]}/my_logs/app.log', maxBytes=1024*1024*10, backupCount=5)
@@ -57,6 +61,20 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(path
 handler.setFormatter(formatter)
 api.logger.addHandler(handler)
 
+# 创建一个带有失败重试机制的定时任务
+scheduler = BackgroundScheduler()
+
+@retry(stop_max_attempt_number=5, wait_fixed=4000)
+def get_all_boat():
+    # 执行获取所有船只信息的函数
+    # 如果函数执行失败，retrying 库会自动重试最多 5 次，每次重试之间等待 2 秒
+    GetValue.get_all_boat()
+
+scheduler.add_job(func=get_all_boat, trigger='interval', seconds=3600*12)
+scheduler.start()
+
+# 调用一次 get_all_boat() 函数，以便在启动定时任务之前先执行一次
+get_all_boat()
 
 @api.route('/card', methods=['GET'])
 @retry(stop_max_attempt_number=6, wait_fixed=300)
@@ -75,14 +93,36 @@ def card():
     response = make_response(buffer.getvalue())
     response.headers["Content-Type"] = "image/png"
     return response
-
 @api.route('/boat', methods=['GET'])
 @retry(stop_max_attempt_number=6, wait_fixed=300)
 def boat():
     try:
         name = request.args.get('name')
         name = urllib.parse.unquote(name)
-        image = MakePhoto("boat",name).make_boat()
+        config = IniFileEditor().get_value("boat","boat_name_excel")
+        boat_name = GetExcelValue(name).get_boat_name(config)[0]
+        image = Image.open("./my_html/templates/storage_boat/"+boat_name+".png")
+    except Exception as e:
+        return abort(400, description=str(e))
+    buffer = BytesIO()
+    image.convert('RGBA').save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # 将图像作为响应内容返回
+    response = make_response(buffer.getvalue())
+    response.headers["Content-Type"] = "image/png"
+    return response
+
+
+
+
+@api.route('/boa_real_time', methods=['GET'])
+@retry(stop_max_attempt_number=6, wait_fixed=300)
+def boat_real_time():
+    try:
+        name = request.args.get('name')
+        name = urllib.parse.unquote(name)
+        image = MakePhoto("boat",name).make_boat()[0]
     except Exception as e:
         return abort(400, description=str(e))
 
