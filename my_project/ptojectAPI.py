@@ -1,3 +1,4 @@
+import concurrent
 import random
 import json
 import re
@@ -694,7 +695,7 @@ class GetValue():
             # 打乱列表顺序
             random.shuffle(name_list)
 
-            # 将列表随机分成 20 份
+            # 将列表随机分成 5 份
             num_threads = 20
             chunk_size = len(name_list) // num_threads
             chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
@@ -713,10 +714,12 @@ class GetValue():
                     print("成功储存", i, "到", save_path)
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                # 在后台运行多个线程
                 futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
 
-            # 等待所有线程执行结束
-            for future in futures:
-                future.result()
+                # 不等待所有线程执行结束，继续执行后面的代码
+                for future in concurrent.futures.as_completed(futures):
+                    pass
+            print("后面的代码可以继续执行")
         except Exception as e:
             raise Exception("获取图片错误",e)

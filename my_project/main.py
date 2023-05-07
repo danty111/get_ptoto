@@ -3,6 +3,7 @@
 import json
 import os
 import asyncio
+from datetime import datetime
 from io import BytesIO
 import logging
 from logging.handlers import RotatingFileHandler
@@ -71,17 +72,11 @@ async def get_all_boat():
     await asyncio.sleep(1)  # 模拟异步执行
     GetValue.get_all_boat()
 
-async def main():
-    # 异步调用 get_all_boat() 函数
-    await get_all_boat()
-
-# 启动异步事件循环
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
-loop.close()
-
-# 添加定时任务
+# 添加定时任务，立即执行一次，然后每隔 12 小时执行一次
+scheduler.add_job(func=get_all_boat, trigger='date', run_date=datetime.now())
 scheduler.add_job(func=get_all_boat, trigger='interval', seconds=3600*12)
+
+# 启动后台调度器
 scheduler.start()
 
 @api.route('/card', methods=['GET'])
@@ -159,6 +154,7 @@ def set_card_template():
         return jsonify({'message': message})
     else:
         return abort(400, description='以下字段与接口参数不同:{}'.format(message))
+
 
 
 if __name__ == '__main__':
