@@ -2,6 +2,7 @@
 # encoding:utf-8
 import json
 import os
+import asyncio
 from io import BytesIO
 import logging
 from logging.handlers import RotatingFileHandler
@@ -61,20 +62,27 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(path
 handler.setFormatter(formatter)
 api.logger.addHandler(handler)
 
-# 创建一个带有失败重试机制的定时任务
 scheduler = BackgroundScheduler()
 
 @retry(stop_max_attempt_number=5, wait_fixed=4000)
-def get_all_boat():
+async def get_all_boat():
     # 执行获取所有船只信息的函数
     # 如果函数执行失败，retrying 库会自动重试最多 5 次，每次重试之间等待 2 秒
+    await asyncio.sleep(1)  # 模拟异步执行
     GetValue.get_all_boat()
 
+async def main():
+    # 异步调用 get_all_boat() 函数
+    await get_all_boat()
+
+# 启动异步事件循环
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+loop.close()
+
+# 添加定时任务
 scheduler.add_job(func=get_all_boat, trigger='interval', seconds=3600*12)
 scheduler.start()
-
-# 调用一次 get_all_boat() 函数，以便在启动定时任务之前先执行一次
-get_all_boat()
 
 @api.route('/card', methods=['GET'])
 @retry(stop_max_attempt_number=6, wait_fixed=300)
