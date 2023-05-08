@@ -454,10 +454,12 @@ class GetExcelValue():
         # 获取飞船名字
         result = self.read_excel(filename)
         result = {k: v for k, v in result.items() if k is not None}
+        if " " in filename:
+            filename = filename.replace(" ", "")
         for chinese_name_list in result:
             if "、" in chinese_name_list or self.name in chinese_name_list:
                 for boat_name_chi in chinese_name_list.split("、"):
-                    if self.name == boat_name_chi:
+                    if self.name.lower() == boat_name_chi.lower():
                         boat_name_en = result[chinese_name_list][0]
                         # boat_name_en = boat_name_en.lower()
                         if " " in boat_name_en:
