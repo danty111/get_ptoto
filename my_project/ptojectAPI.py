@@ -311,7 +311,8 @@ class GetValue():
         else:
             boat_value_dict["size"] = "-"
         # 添加船员
-        crew_num = _element.xpath('//*[text() = "Crew"]/following-sibling::*/text()')[0]
+        crew_num = _element.xpath('//*[text() = "Crew"]/following-sibling::*/text()')
+        crew_num = crew_num[0]
         if "–" in crew_num:
             s = crew_num.replace(' ', '')  # 移除空格
             crew_num_list = s.split('–')  # 将字符串按照'-'分割成两个部分
@@ -554,14 +555,18 @@ class GetValue():
                 if weapon_parameter == "weapon":
                     if'SubWeapons' in item:
                         if 'SubWeapons' in item:
-                            size = item['SubWeapons'][0]["Size"]
+                            for i in item['SubWeapons']:
+                                size = i["Size"]
+                                if size in size_count:
+                                    size_count[size] += 1
+                                else:
+                                    size_count[size] = 1
                         weapon_dict[size] = True
                     else:
-                        pass
-                if size in size_count:
-                    size_count[size] += 1
-                else:
-                    size_count[size] = 1
+                        if size in size_count:
+                            size_count[size] += 1
+                        else:
+                            size_count[size] = 1
                 # 以特定格式打印结果
             weapon = ''
             for size in size_count:
