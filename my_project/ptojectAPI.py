@@ -594,7 +594,7 @@ class GetValue():
                     else:
                         temporary[sub_weapon["Size"]] = 1
                 for num in temporary:
-                    name = f"{temporary[num]}*S{num}"
+                    name = f"S{num}x{temporary[num]}"
 
                     if name in aaa_dict:
                         aaa_dict[name] += 1
@@ -602,7 +602,7 @@ class GetValue():
                         aaa_dict[name] = 1
             result_value = ""
             for i in aaa_dict:
-                result_value += f"{i}*{aaa_dict[i]}+"
+                result_value += f"{i}x{aaa_dict[i]}+"
             result_value = result_value[:-1]
             return result_value
         try:
@@ -633,7 +633,7 @@ class GetValue():
                     continue
             result = ""
             for i in missile_dice:
-                result += f"S{i}*{missile_dice[i]}+"
+                result += f"S{i}x{missile_dice[i]}+"
             result = result[:-1]
         except:
             result = ""
@@ -652,7 +652,7 @@ class GetValue():
                     continue
             Bombs_result = ""
             for i in missile_dice:
-                Bombs_result += f"S{i}*{missile_dice[i]}+"
+                Bombs_result += f"S{i}x{missile_dice[i]}+"
             Bombs_result = Bombs_result[:-1]
             boat_value_dict["missile"] = Bombs_result
         except:
