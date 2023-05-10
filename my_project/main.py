@@ -91,11 +91,11 @@ def boat():
         name = urllib.parse.unquote(name)
         config = IniFileEditor().get_value("boat","boat_name_excel")
         boat_name = GetExcelValue(name).get_boat_name(config)[0]
-        image = Image.open(os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/storage_boat/"+boat_name+".png")
+        image = Image.open(os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/storage_boat/"+boat_name+".jpeg")
     except Exception as e:
         return abort(400, description=str(e))
     buffer = BytesIO()
-    image.convert('RGBA').save(buffer, format="PNG")
+    image.convert('RGB').save(buffer, format="jpeg")
     buffer.seek(0)
 
     # 将图像作为响应内容返回
