@@ -6,6 +6,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 import requests
 from PIL import Image
+from PIL.Image import Quantize
 from lxml import etree
 
 from common import IniFileEditor, MakePhotos, Request, common_method, GetExcelValue
@@ -83,7 +84,7 @@ class MakePhoto:
                                                                                   self.section["font_color"],
                                                                                   self.template)
         # 将图像保存为 PNG 格式
-
+        # self.back_ground_image = common_method.compress_image(self.back_ground_image, 10)
         return self.back_ground_image
 
     def make_boat(self):
@@ -124,6 +125,7 @@ class MakePhoto:
                                                                                   self.section["font_color"],
                                                                                   {"boat_name_coordinate":self.section["boat_name_en_coordinate"]})
 
+        # 将图像保存为 PNG 格式
         return self.back_ground_image,boatyard_name[0]
 
 
@@ -713,8 +715,8 @@ class GetValue():
                 for i in names:
                     image_file, image_name = MakePhoto("boat", i).make_boat()
                     save_path = config['boat']['boat_name_excel'].split("boat")[
-                                    0] + "storage_boat/" + image_name + ".png"
-                    image_file.save(save_path, "PNG")
+                                    0] + "storage_boat/" + image_name + ".jpeg"
+                    common_method.pic_compress(image_file,save_path)
                     print("成功储存", i, "到", save_path)
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:

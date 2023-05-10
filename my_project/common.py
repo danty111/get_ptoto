@@ -1,23 +1,18 @@
 import ast
 import configparser
 import copy
-import datetime
 import json
 import os
 import re
-from typing import List, Dict, Any
+import cv2
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 import numpy as np
 import pandas as pd
-import requests
-from lxml import html
-
 from io import BytesIO
 from pprint import pprint
 import requests
 from cnocr import CnOcr
-from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
 from openpyxl import load_workbook
 
@@ -364,6 +359,48 @@ class common_method:
             time_format = f"{seconds:02d}s"
 
         return time_format
+
+    @staticmethod
+    def pic_compress(image, out_path, target_size=1024, pic_type='.jpeg'):
+        # 将 PIL.Image 对象转换为 numpy 数组
+        img_np = np.array(image)
+
+        # 将 numpy 数组转换为 OpenCV 图像格式
+        img_cv = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+
+        # 将 OpenCV 图像格式转换为 bytes 对象
+        pic_byte = cv2.imencode(pic_type, img_cv, [int(cv2.IMWRITE_JPEG_QUALITY), 100])[1].tobytes()
+
+        # 计算图片当前大小和目标大小的比率
+        current_size = len(pic_byte) / 1024
+        ratio = target_size / current_size
+
+        # 如果当前大小小于等于目标大小，则直接保存并返回
+        if current_size <= target_size:
+            with open(out_path, 'wb') as f:
+                f.write(pic_byte)
+            return current_size
+
+        # 设置初始压缩质量和最小压缩质量
+        quality_min = 0
+        quality_max = 100
+
+        # 使用二分法调整压缩质量，直到文件大小小于目标大小或者达到最小压缩质量
+        while quality_max - quality_min > 1:
+            quality = quality_min + (quality_max - quality_min) // 2
+            pic_byte = cv2.imencode(pic_type, img_cv, [int(cv2.IMWRITE_JPEG_QUALITY), quality])[1].tobytes()
+            current_size = len(pic_byte) / 1024
+            if current_size / target_size < ratio:
+                quality_min = quality
+            else:
+                quality_max = quality
+
+        # 保存压缩后的图片
+        with open(out_path, 'wb') as f:
+            f.write(pic_byte)
+
+        return current_size
+
 
 
 class IniFileEditor:

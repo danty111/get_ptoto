@@ -11,7 +11,7 @@ from logging.handlers import RotatingFileHandler
 import flask
 from PIL import Image
 from flask import jsonify, abort, request, make_response
-from common import IniFileEditor, MakePhotos, GetExcelValue
+from common import IniFileEditor, MakePhotos, GetExcelValue, common_method
 from ptojectAPI import MakePhoto, GetValue
 from retrying import retry
 import sys
@@ -91,7 +91,6 @@ def boat():
         name = urllib.parse.unquote(name)
         config = IniFileEditor().get_value("boat","boat_name_excel")
         boat_name = GetExcelValue(name).get_boat_name(config)[0]
-
         image = Image.open(os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/storage_boat/"+boat_name+".png")
     except Exception as e:
         return abort(400, description=str(e))
