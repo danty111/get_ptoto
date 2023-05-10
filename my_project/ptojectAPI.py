@@ -336,8 +336,8 @@ class GetValue():
         goods = common_method.decimal_de_zeroing(res1["Cargo"])
         boat_value_dict["goods"] = goods + " SCU"
         # 储存
-        ExternalStorage = common_method.decimal_de_zeroing(res1["ExternalStorage"])
-        boat_value_dict["storage_space"] = ExternalStorage + " SCU"
+        ExternalStorage = common_method.decimal_de_zeroing(res1["PersonalInventory"])
+        boat_value_dict["storage_space"] = ExternalStorage + ",000 K uSCU"
         # 索赔\加急
         Insurance = res1["Insurance"]
         StandardClaimTime = common_method().convert_seconds_to_time_format(Insurance["StandardClaimTime"])
