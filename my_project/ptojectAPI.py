@@ -16,9 +16,18 @@ class MakePhoto:
     def __init__(self, interface, name):
         self.config = json.loads(IniFileEditor().read_ini_file())
         self.interface = interface
-        self.back_ground_image = Image.open(self.config[interface]["background"])
-
         self.template_image_name = self.config[interface]["background"].replace(".png", "_template.png")
+        if self.interface == "boat":
+            random_number = random.randint(1, 8)
+            if random_number < 10:
+                random_number = "0" + str(random_number)
+            self.back_ground_image = Image.open(self.config[interface]["background"].replace(".png",f"_{random_number}.png"))
+
+        else:
+
+            self.back_ground_image = Image.open(self.config[interface]["background"])
+
+
         self.template_image = Image.open(self.template_image_name)
         self.name = name
 
