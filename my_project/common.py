@@ -342,7 +342,7 @@ class common_method:
             price = price_list[0] + ": {:.2f}W".format(float(price_list[1]) / 10000)
         except:
             price = "{:.2f}W".format(float(price) / 10000)
-        return common_method.decimal_de_zeroing(price)
+        return price
 
     @staticmethod
     def convert_seconds_to_time_format(minutes):

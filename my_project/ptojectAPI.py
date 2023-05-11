@@ -305,7 +305,6 @@ class GetValue():
                 address = first_item[0]
             price = common_method.amount_handled(first_item[1])
             game_price = '{} aUEC ({}) '.format(price, address)
-            game_price = common_method.decimal_de_zeroing(game_price)
 
             boat_value_dict["game_price"] = game_price
         else:
