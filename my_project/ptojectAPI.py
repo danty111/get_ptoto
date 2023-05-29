@@ -278,7 +278,6 @@ class GetValue():
         else:
             boat_name = self.name
         # 船名
-
         boat_value_dict["boat_name"] = name_list[3]
         boat_value_dict["boat_en_name"] = boat_name.upper()
         # 添加船价
@@ -323,11 +322,12 @@ class GetValue():
         # 添加船员
         crew_num = _element.xpath('//*[text() = "Crew"]/following-sibling::*/text()')
         crew_num = crew_num[0]
-        if "–" in crew_num:
-            s = crew_num.replace(' ', '')  # 移除空格
-            crew_num_list = s.split('–')  # 将字符串按照'-'分割成两个部分
-            crew_num = sum([int(x) for x in crew_num_list])
-        boat_value_dict["crew_num"] = str(crew_num) + " 人"
+        # if "–" in crew_num:
+        #     s = crew_num.replace(' ', '')  # 移除空格
+        #     crew_num_list = s.split('–')  # 将字符串按照'-'分割成两个部分
+        #     crew_num = sum([int(x) for x in crew_num_list])
+        # boat_value_dict["crew_num"] = str(crew_num) + " 人"
+        boat_value_dict["crew_num"] = crew_num
         # 质量
         quality = common_method.decimal_de_zeroing(res1["Mass"])
         boat_value_dict["quality"] = quality + " KG"
@@ -370,19 +370,40 @@ class GetValue():
 
         # 标准速度
         try:
-            standard_speed =_element.xpath('//*[text() = "Combat speed"]/following-sibling::*/text()')[0]
-            boat_value_dict["standard_speed"] = standard_speed
+            standard_speed =_element.xpath('//*[text() = "SCM speed"]/following-sibling::*//*[@class="smwtext"]/text()')[0]
+            s_speed = boat_value_dict["standard_speed"] = standard_speed.encode('utf-8').decode('utf-8')
+            match = re.search(r'(\d+(\.\d+)?)\s*(\w+/\w+)', s_speed)
+
+            if match:
+                value = match.group(1)  # 提取数字部分
+                unit = match.group(3)  # 提取单位部分
+
+                boat_value_dict["standard_speed"] = f'{value} {unit}'
+            else:
+                print('No match found.')
         except:
             boat_value_dict["standard_speed"] = "-"
 
         #最高速度
         try:
-            maximum_speed = _element.xpath('//*[text() = "Max speed"]/following-sibling::*/text()')
+            maximum_speed = _element.xpath('//*[text() = "Max speed"]/following-sibling::*//*[@class="smwtext"]/text()')
             if maximum_speed != []:
                 maximum_speed = maximum_speed[0]
             else:
                 maximum_speed = res1['FlightCharacteristics']['MaxSpeed']
-            boat_value_dict["maximum_speed"] = maximum_speed
+            max_speed =  maximum_speed.encode('utf-8').decode('utf-8')
+            # 使用正则表达式提取数字和单位
+            match = re.search(r'(\d+(\.\d+)?)\s*(\w+/\w+)', max_speed)
+
+            if match:
+                value = match.group(1)  # 提取数字部分
+                unit = match.group(3)  # 提取单位部分
+
+                boat_value_dict["maximum_speed"] = f'{value} {unit}'
+            else:
+                print('No match found.')
+
+
         except:
             boat_value_dict["maximum_speed"] = "-"
         # 主引擎
@@ -467,55 +488,57 @@ class GetValue():
         boat_value_dict["infrared_radar"] = infrared_radar + " IR"
         # 量子引擎
         try:
-            quantum_engine = _element.xpath('//*[text() = "Quantum drive"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                             _element.xpath('//*[text() = "Quantum drive"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            quantum_engine = _element.xpath('//*[text() = " Quantum drive"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__size"]/text()')[0]+\
+                             _element.xpath('//*[text() = " Quantum drive"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__count"]/text()')[0][::-1]
             boat_value_dict["quantum_engine"] = quantum_engine
+            boat_value_dict["transition_engine"] = quantum_engine
         except:
             boat_value_dict["quantum_engine"] = "-"
-        # 越迁引擎
-        try:
-            transition_engine = _element.xpath('//*[text() = "Jump drive"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                                _element.xpath(
-                                    '//*[text() = "Jump drive"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
-            boat_value_dict["transition_engine"] = transition_engine
-        except:
             boat_value_dict["transition_engine"] = "-"
+        # # 越迁引擎
+        # try:
+        #     transition_engine = _element.xpath('//*[text() = " Jump drive"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__size"]/text()')[0]+\
+        #                         _element.xpath(
+        #                             '//*[text() = " Jump drive"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__count"]/text()')[0][::-1]
+        #     boat_value_dict["transition_engine"] = transition_engine
+        # except:
+        #     boat_value_dict["transition_engine"] = "-"
 
         # 发电:
         try:
-            generator = _element.xpath('//*[text() = "Power plant"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+            generator = _element.xpath('//*[text() = " Power plant"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__size"]/text()')[0]+\
                         _element.xpath(
-                            '//*[text() = "Power plant"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+                            '//*[text() = " Power plant"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__count"]/text()')[0][::-1]
             boat_value_dict["generator"] = generator
         except:
             boat_value_dict["generator"] = "-"
         try:
         # 冷却器
-            cooler = _element.xpath('//*[text() = "Cooler"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-            _element.xpath('//*[text() = "Cooler"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            cooler = _element.xpath('//*[text() = " Cooler"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__size"]/text()')[0]+\
+            _element.xpath('//*[text() = " Cooler"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__count"]/text()')[0][::-1]
             boat_value_dict["cooler"] = cooler
         except:
             boat_value_dict["cooler"] = "-"
         try:
             # 护盾
-            shield = _element.xpath('//*[text() = "Shield generator"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+            shield = _element.xpath('//*[text() = " Shield generator"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__size"]/text()')[0]+\
                      _element.xpath(
-                         '//*[text() = "Shield generator"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+                         '//*[text() = " Shield generator"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__count"]/text()')[0][::-1]
             boat_value_dict["shield"] = shield
         except:
             boat_value_dict["shield"] = "-"
         try:
             # 雷达
-            radar = _element.xpath('//*[text() = "Radar"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
-                             _element.xpath('//*[text() = "Radar"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+            radar = _element.xpath('//*[text() = " Radar"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__size"]/text()')[0]+\
+                             _element.xpath('//*[text() = " Radar"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__count"]/text()')[0][::-1]
             boat_value_dict["radar"] = radar
         except:
             boat_value_dict["radar"] = "-"
         try:
            # 电脑
-            computer = _element.xpath('//*[text() = "Computer"]/../following-sibling::*//*[@class="template-component__size"]/text()')[0]+\
+            computer = _element.xpath('//*[text() = " Scanner"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__size"]/text()')[0]+\
                                 _element.xpath(
-                                    '//*[text() = "Computer"]/../following-sibling::*//*[@class="template-component__count"]/text()')[0][::-1]
+                                    '//*[text() = " Scanner"]/following-sibling::*//*[@class="template-component__port"]/*[@class="template-component__count"]/text()')[0][::-1]
             boat_value_dict["computer"] = computer
         except:
             boat_value_dict["computer"] = "-"
