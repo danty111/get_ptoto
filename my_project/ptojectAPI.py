@@ -585,7 +585,7 @@ class GetValue():
             for item in grade_list:
                 size = item['Size']
 
-                if weapon_parameter == "weapon":
+                if weapon_parameter == "weapon" or "multifunctional" in weapon_parameter:
                     if'SubWeapons' in item:
                         if 'SubWeapons' in item:
                             for i in item['SubWeapons']:
