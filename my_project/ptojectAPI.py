@@ -320,14 +320,17 @@ class GetValue():
         else:
             boat_value_dict["size"] = "-"
         # 添加船员
-        crew_num = _element.xpath('//*[text() = "Crew"]/following-sibling::*/text()')
-        crew_num = crew_num[0]
+        try:
+            crew_num = _element.xpath('//*[text() = "Crew"]/following-sibling::*/text()')
+            crew_num = crew_num[0]
         # if "–" in crew_num:
         #     s = crew_num.replace(' ', '')  # 移除空格
         #     crew_num_list = s.split('–')  # 将字符串按照'-'分割成两个部分
         #     crew_num = sum([int(x) for x in crew_num_list])
         # boat_value_dict["crew_num"] = str(crew_num) + " 人"
-        boat_value_dict["crew_num"] = crew_num
+            boat_value_dict["crew_num"] = crew_num
+        except:
+            boat_value_dict["crew_num"] = "-"
         # 质量
         quality = common_method.decimal_de_zeroing(res1["Mass"])
         boat_value_dict["quality"] = quality + " KG"
