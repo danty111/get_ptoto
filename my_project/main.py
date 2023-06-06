@@ -170,6 +170,7 @@ def schedule_async_task():
 if __name__ == '__main__':
     schedule_async_task()
     api.run(port=8888, host='0.0.0.0',debug=True)
+    # GetValue.get_all_boat()
     # image = MakePhoto("boat","术士").make_boat()
     # IniFileEditor().read_ini_file()
     # print(IniFileEditor().))

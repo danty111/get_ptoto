@@ -392,17 +392,14 @@ class GetValue():
             else:
                 maximum_speed = res1['FlightCharacteristics']['MaxSpeed']
             max_speed =  maximum_speed.encode('utf-8').decode('utf-8')
-            # 使用正则表达式提取数字和单位
-            match = re.search(r'(\d+(\.\d+)?)\s*(\w+/\w+)', max_speed)
+            match = re.search(r'([\d,]+(\.\d+)?)(\s*)([a-zA-Z]+/[a-zA-Z]+)', max_speed)
 
             if match:
                 value = match.group(1)  # 提取数字部分
-                unit = match.group(3)  # 提取单位部分
-
+                unit = match.group(4)  # 提取单位部分
                 boat_value_dict["maximum_speed"] = f'{value} {unit}'
             else:
                 print('No match found.')
-
 
         except:
             boat_value_dict["maximum_speed"] = "-"
@@ -705,7 +702,7 @@ class GetValue():
         except:
             boat_value_dict["multifunctional"] = "-"
         # 飞船图片
-        boat_value_dict["boat_image"] = _element.xpath('//*[@class ="infobox-image"]//*[@class = "mw-file-description"]/img/@src')[0]
+        boat_value_dict["boat_image"] = _element.xpath('//*[@class ="infobox__content mw-collapsible-content"]//*[@class = "mw-file-description"]/img/@src')[0]
 
         # 采集版本
         match = re.search(r'gameversion="([^"]+)"', data_version)
