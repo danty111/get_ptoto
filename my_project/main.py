@@ -45,8 +45,9 @@ def close_port(port):
     """
     try:
         output = subprocess.check_output(['sudo', 'lsof', '-ti', f'tcp:{port}'])
-        pid = int(output.strip().decode('utf-8'))
-        subprocess.run(['sudo', 'kill', str(pid)])
+        pids = output.strip().decode('utf-8').split('\n')
+        for pid in pids:
+            subprocess.run(['sudo', 'kill', pid])
         print(f"端口{port}上的进程已被关闭")
     except subprocess.CalledProcessError:
         print(f"端口{port}未被占用")
