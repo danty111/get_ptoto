@@ -198,13 +198,13 @@ def schedule_async_task():
 
 
 if __name__ == '__main__':
-
-    # 检查端口是否被占用
-    if not check_port(8888):
-        # 关闭端口上的任务
-        close_port(8888)
-    else:
-        pass
+    #
+    # # 检查端口是否被占用
+    # if not check_port(8888):
+    #     # 关闭端口上的任务
+    #     close_port(8888)
+    # else:
+    #     pass
     schedule_async_task()
     api.run(port=8888, host='0.0.0.0',debug=True)
     # GetValue.get_all_boat()
