@@ -3,6 +3,7 @@
 import json
 import os
 import asyncio
+import subprocess
 import threading
 from datetime import datetime
 from io import BytesIO
@@ -40,23 +41,15 @@ def check_port(port):
 
 def close_port(port):
     """
-    关闭端口的任务
+    关闭指定端口上的进程
     """
-    # 创建 socket 对象
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(1)
-
-    # 连接端口
     try:
-        s.connect(("localhost", port))
-    except socket.error as e:
+        output = subprocess.check_output(['sudo', 'lsof', '-ti', f'tcp:{port}'])
+        pid = int(output.strip().decode('utf-8'))
+        subprocess.run(['sudo', 'kill', str(pid)])
+        print(f"端口{port}上的进程已被关闭")
+    except subprocess.CalledProcessError:
         print(f"端口{port}未被占用")
-        return
-
-    # 关闭连接
-    s.shutdown(socket.SHUT_RDWR)
-    s.close()
-    print(f"端口{port}上的任务已关闭")
 
 
 def init_app():
