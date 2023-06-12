@@ -22,6 +22,42 @@ sys.path.append(os.path.dirname(sys.path[0]))
 config_file = os.path.abspath(__file__).split("/my_project")[0] + "/config.ini"
 
 
+import socket
+
+def check_port(port):
+    """
+    检查端口是否被占用
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # 设置超时时间为1秒
+        s.settimeout(1)
+        try:
+            s.bind(("localhost", port))
+            return True
+        except socket.error as e:
+            print(f"端口{port}已被占用")
+            return False
+
+def close_port(port):
+    """
+    关闭端口的任务
+    """
+    # 创建 socket 对象
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(1)
+
+    # 连接端口
+    try:
+        s.connect(("localhost", port))
+    except socket.error as e:
+        print(f"端口{port}未被占用")
+        return
+
+    # 关闭连接
+    s.shutdown(socket.SHUT_RDWR)
+    s.close()
+    print(f"端口{port}上的任务已关闭")
+
 
 def init_app():
     """
@@ -168,6 +204,13 @@ def schedule_async_task():
 
 
 if __name__ == '__main__':
+
+    # 检查端口是否被占用
+    if not check_port(8888):
+        # 关闭端口上的任务
+        close_port(8888)
+    else:
+        pass
     schedule_async_task()
     api.run(port=8888, host='0.0.0.0',debug=True)
     # GetValue.get_all_boat()
