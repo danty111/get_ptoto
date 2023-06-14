@@ -194,7 +194,7 @@ def start_async_task():
 
 def schedule_async_task():
     scheduler.add_job(func=start_async_task, trigger='date', run_date=datetime.now())
-    scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 12)
+    scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 1)
     scheduler.start()
 
 
