@@ -199,24 +199,9 @@ def schedule_async_task():
 
 
 if __name__ == '__main__':
-    #
-    def exit_handler():
-        # 检查端口是否被占用
-        if not check_port(8888):
-            # 关闭端口上的任务
-            close_port(8888)
-        else:
-            pass
 
-
-    try:
-        schedule_async_task()
-        api.run(port=8888, host='0.0.0.0',debug=True)
-        atexit.register(exit_handler)
-    except Exception as e:
-        print(f"发生异常：{e}")
-    finally:
-        exit_handler()
+    schedule_async_task()
+    api.run(port=8888, host='0.0.0.0',debug=True)
 
     # GetValue.get_all_boat()
     # image = MakePhoto("boat","术士").make_boat()
