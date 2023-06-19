@@ -175,18 +175,22 @@ def set_card_template():
 
 scheduler = BackgroundScheduler()
 
-@retry(stop_max_attempt_number=5, wait_fixed=4000)
+
 async def get_all_boat():
-    # 执行获取所有船只信息的函数
-    # 如果函数执行失败，retrying 库会自动重试最多 5 次，每次重试之间等待 2 秒
-    await asyncio.sleep(1)  # 模拟异步执行
+    # 处理数据
     GetValue.get_all_boat()
+
+@retry(stop_max_attempt_number=5, wait_fixed=4000)
+async def retry_get_all_boat():
+    await get_all_boat()
 
 def run_async_task():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(get_all_boat())
-    loop.close()
+    try:
+        loop.run_until_complete(retry_get_all_boat())
+    finally:
+        loop.close()
 
 def start_async_task():
     thread = threading.Thread(target=run_async_task)
@@ -194,14 +198,13 @@ def start_async_task():
 
 def schedule_async_task():
     scheduler.add_job(func=start_async_task, trigger='date', run_date=datetime.now())
-    scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 2)
+    scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 1)
     scheduler.start()
 
-
 if __name__ == '__main__':
-
     schedule_async_task()
-    api.run(port=8888, host='0.0.0.0',debug=True)
+    api.run(port=8888, host='0.0.0.0', debug=True)
+
 
     # GetValue.get_all_boat()
     # image = MakePhoto("boat","术士").make_boat()
