@@ -377,8 +377,7 @@ class GetValue():
 
         # 标准速度
         try:
-            standard_speed = \
-            _element.xpath('//*[text() = "SCM speed"]/following-sibling::*//*[@class="smwtext"]/text()')[0]
+            standard_speed = _element.xpath('//*[text() = "Scm speed"]/following-sibling::*//*[@class="smwtext"]/text()')[0]
             s_speed = boat_value_dict["standard_speed"] = standard_speed.encode('utf-8').decode('utf-8')
             match = re.search(r'(\d+(\.\d+)?)\s*(\w+/\w+)', s_speed)
 
