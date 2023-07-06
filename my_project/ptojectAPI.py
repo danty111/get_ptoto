@@ -18,22 +18,15 @@ class MakePhoto:
         self.interface = interface
         self.template_image_name = self.config[interface]["background"].replace(".png", "_template.png")
         if self.interface == "boat":
-            random_number = random.randint(1, 10)
+            random_number = random.randint(1, 8)
             if random_number < 10:
                 random_number = "0" + str(random_number)
-            else:
-                random_number = str(random_number)
             self.back_ground_image = Image.open(
                 self.config[interface]["background"].replace(".png", f"_{random_number}.png"))
 
         else:
-            random_number = random.randint(1, 5)
-            if random_number < 10:
-                random_number = "0" + str(random_number)
-            else:
-                random_number = str(random_number)
 
-            self.back_ground_image = Image.open(self.config[interface]["background"].replace(".png", f"_{random_number}.png"))
+            self.back_ground_image = Image.open(self.config[interface]["background"])
 
         self.template_image = Image.open(self.template_image_name)
         self.name = name
@@ -118,8 +111,9 @@ class MakePhoto:
             IniFileEditor().write_value("boat_template", get_value)
             # 将判断改变字段回填false
             IniFileEditor().set_value("boat", "need_change", "false")
-        # 获取舰船名称
+        # 获取名片信息
         msg = GetValue(self.name).get_boat(self.config[self.interface]["boat_name_excel"])
+        # 绘制舰队图标
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["boat_image"], self.template["boat_image_size"],
                             self.template["boat_image_coordinate"], hierarchy="upper")
