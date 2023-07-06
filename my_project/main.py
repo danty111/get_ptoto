@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 # encoding:utf-8
+import asyncio
 import atexit
 import json
 import os
-import asyncio
 import subprocess
 import threading
 from datetime import datetime
@@ -175,20 +175,15 @@ def set_card_template():
 
 scheduler = BackgroundScheduler()
 
-
 async def get_all_boat():
     # 处理数据
     GetValue.get_all_boat()
-
-@retry(stop_max_attempt_number=5, wait_fixed=4000)
-async def retry_get_all_boat():
-    await get_all_boat()
 
 def run_async_task():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(retry_get_all_boat())
+        loop.run_until_complete(get_all_boat())
     finally:
         loop.close()
 
@@ -197,30 +192,12 @@ def start_async_task():
     thread.start()
 
 def schedule_async_task():
-    scheduler.add_job(func=start_async_task, trigger='date', run_date=datetime.now())
-    scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 2)
+    # 先执行一次异步任务
+    start_async_task()
+    # 定期执行异步任务
+    scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 1)
     scheduler.start()
 
 if __name__ == '__main__':
     schedule_async_task()
     api.run(port=8888, host='0.0.0.0', debug=True)
-
-
-    # GetValue.get_all_boat()
-    # image = MakePhoto("boat","术士").make_boat()
-    # IniFileEditor().read_ini_file()
-    # print(IniFileEditor().))
-
-    # # 验证船体模版识别
-    # print(IniFileEditor().read_ini_file())
-    # section = json.loads(IniFileEditor().read_ini_file())
-    # card=section["card"]
-    # image = Aimage.open(section["boat_parameter_dictionary"]["template_path"])
-    # MakePhotos(image).recognize_text(card["ttf_path"], card["font_size"]
-    #                                                                       ,card["adjust_coor"]
-    #                                                                       ,card["font_color"],card["save_path"])
-    # # MakePhoto("card", 'fkbaicai').make_card()
-    # # #识别船坐标
-    # GetValue("drak_cutlass_black").get_boat()
-
-    # MakePhoto("boat", 'anvl_carrack').make_boat()
