@@ -1,12 +1,9 @@
 #!/usr/bin/python3
 # encoding:utf-8
 import asyncio
-import atexit
-import json
 import os
 import subprocess
 import threading
-from datetime import datetime
 from io import BytesIO
 import logging
 from logging.handlers import RotatingFileHandler

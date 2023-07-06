@@ -293,6 +293,8 @@ class GetValue():
                     float(price[1].replace('$', '').replace(' ', ''))) + ")"
             else:
                 price = "$ " + str(float(price[0].replace('$', '').replace(' ', '')))
+            if ".0" in price:
+                price = price.replace(".0", "")
             boat_value_dict["price"] = price
         except:
             boat_value_dict["price"] = "无法购买"
