@@ -792,8 +792,11 @@ class GetValue():
                     common_method.pic_compress(image_file, save_path)
                     print("成功储存", i, "到", save_path)
 
-            with ThreadPoolExecutor(max_workers=num_threads) as executor:
-                futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+            try:
+                with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                    futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+            finally:
+                executor.shutdown(wait=False)
             print("所有数据执行完毕")
             # 等待所有线程执行结束
         except Exception as e:
