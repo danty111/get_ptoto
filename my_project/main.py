@@ -176,10 +176,9 @@ def set_card_template():
     else:
         return abort(400, description='以下字段与接口参数不同:{}'.format(message))
 
-def signal_handler(signum):
+
+def signal_handler(signum, frame):
     print(f"Received signal {signum}, stopping server gracefully")
-    # 停止定时任务调度器
-    scheduler.shutdown()
     # 关闭 API 服务
     func = request.environ.get('werkzeug.server.shutdown')
     if func is None:
