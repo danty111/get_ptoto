@@ -4,20 +4,24 @@ import asyncio
 import concurrent.futures
 import os
 import profile
+import signal
 import subprocess
 import threading
+from datetime import time
 from io import BytesIO
 import logging
 from logging.handlers import RotatingFileHandler
 import flask
 from PIL import Image
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.blocking import BlockingScheduler
 from flask import jsonify, abort, request, make_response
 from common import IniFileEditor, MakePhotos, GetExcelValue, common_method
 from ptojectAPI import MakePhoto, GetValue
 from retrying import retry
 import sys
 import urllib.parse
-from apscheduler.schedulers.background import BackgroundScheduler
+
 
 sys.path.append(os.path.dirname(sys.path[0]))
 config_file = os.path.abspath(__file__).split("/my_project")[0] + "/config.ini"
@@ -172,37 +176,65 @@ def set_card_template():
     else:
         return abort(400, description='以下字段与接口参数不同:{}'.format(message))
 
-# 创建线程池
-executor = concurrent.futures.ThreadPoolExecutor()
-scheduler = BackgroundScheduler()
-
-async def get_all_boat():
-    # 处理数据
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(executor, GetValue.get_all_boat)
-
-def async_task():
-    # 执行异步任务
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(get_all_boat())
-    finally:
-        loop.close()
-
-@profile
-def start_async_task():
-    # 在单独的线程中执行异步任务
-    thread = threading.Thread(target=async_task)
-    thread.start()
-
-def schedule_async_task():
-    # 先执行一次异步任务
-    start_async_task()
-    # 定期执行异步任务
-    scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 1)
-    scheduler.start()
+# # 创建线程池
+# executor = concurrent.futures.ThreadPoolExecutor()
+# scheduler = BackgroundScheduler()
+#
+# @profile
+# async def get_all_boat():
+#     # 处理数据
+#     loop = asyncio.get_running_loop()
+#     await loop.run_in_executor(executor, GetValue.get_all_boat)
+#
+# @profile
+# def async_task():
+#     # 执行异步任务
+#     loop = asyncio.new_event_loop()
+#     asyncio.set_event_loop(loop)
+#     try:
+#         loop.run_until_complete(get_all_boat())
+#     finally:
+#         loop.close()
+#
+# @profile
+# def start_async_task():
+#     # 在单独的线程中执行异步任务
+#     thread = threading.Thread(target=async_task)
+#     thread.start()
+#
+# @profile
+# def schedule_async_task():
+#     # 先执行一次异步任务
+#     start_async_task()
+#     # 定期执行异步任务
+#     scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 1)
+#     scheduler.start()
 
 if __name__ == '__main__':
-    schedule_async_task()
+    # 定义一个信号处理函数
+    def signal_handler(signum):
+        print('Signal handler called with signal', signum)
+
+
+    # 在主线程中注册信号处理函数
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # 创建一个定时任务调度器
+    scheduler = BackgroundScheduler()
+
+    # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
+    scheduler.add_job(GetValue.get_all_boat, 'interval', hours=1)
+
+
+    # 创建一个子线程，并在其中执行任务
+    def thread_func():
+        GetValue.get_all_boat()
+        # 启动定时任务调度器
+        scheduler.start()
+        # 在主线程中等待定时任务调度器结束
+        scheduler.shutdown(wait=False)
+
+    t = threading.Thread(target=thread_func)
+    t.start()
+    # 启动 API 服务
     api.run(port=8888, host='0.0.0.0', debug=True)
