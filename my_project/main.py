@@ -176,45 +176,17 @@ def set_card_template():
     else:
         return abort(400, description='以下字段与接口参数不同:{}'.format(message))
 
-# # 创建线程池
-# executor = concurrent.futures.ThreadPoolExecutor()
-# scheduler = BackgroundScheduler()
-#
-# @profile
-# async def get_all_boat():
-#     # 处理数据
-#     loop = asyncio.get_running_loop()
-#     await loop.run_in_executor(executor, GetValue.get_all_boat)
-#
-# @profile
-# def async_task():
-#     # 执行异步任务
-#     loop = asyncio.new_event_loop()
-#     asyncio.set_event_loop(loop)
-#     try:
-#         loop.run_until_complete(get_all_boat())
-#     finally:
-#         loop.close()
-#
-# @profile
-# def start_async_task():
-#     # 在单独的线程中执行异步任务
-#     thread = threading.Thread(target=async_task)
-#     thread.start()
-#
-# @profile
-# def schedule_async_task():
-#     # 先执行一次异步任务
-#     start_async_task()
-#     # 定期执行异步任务
-#     scheduler.add_job(func=start_async_task, trigger='interval', seconds=3600 * 1)
-#     scheduler.start()
+def signal_handler(signum):
+    print(f"Received signal {signum}, stopping server gracefully")
+    # 停止定时任务调度器
+    scheduler.shutdown()
+    # 关闭 API 服务
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
 if __name__ == '__main__':
-    # 定义一个信号处理函数
-    def signal_handler(signum):
-        print('Signal handler called with signal', signum)
-
 
     # 在主线程中注册信号处理函数
     signal.signal(signal.SIGINT, signal_handler)
@@ -223,7 +195,7 @@ if __name__ == '__main__':
     scheduler = BackgroundScheduler()
 
     # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
-    scheduler.add_job(GetValue.get_all_boat, 'interval', hours=1)
+    scheduler.add_job(GetValue.get_all_boat, 'interval', hours=0.1)
 
 
     # 创建一个子线程，并在其中执行任务
@@ -238,3 +210,5 @@ if __name__ == '__main__':
     t.start()
     # 启动 API 服务
     api.run(port=8888, host='0.0.0.0', debug=True)
+    # 等待子线程结束
+    t.join()
