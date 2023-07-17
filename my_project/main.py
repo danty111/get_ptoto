@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 # encoding:utf-8
 import asyncio
+import concurrent.futures
 import os
+import profile
 import subprocess
 import threading
 from io import BytesIO
@@ -170,13 +172,17 @@ def set_card_template():
     else:
         return abort(400, description='以下字段与接口参数不同:{}'.format(message))
 
+# 创建线程池
+executor = concurrent.futures.ThreadPoolExecutor()
 scheduler = BackgroundScheduler()
 
 async def get_all_boat():
     # 处理数据
-    GetValue.get_all_boat()
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(executor, GetValue.get_all_boat)
 
-def run_async_task():
+def async_task():
+    # 执行异步任务
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
@@ -184,8 +190,10 @@ def run_async_task():
     finally:
         loop.close()
 
+@profile
 def start_async_task():
-    thread = threading.Thread(target=run_async_task)
+    # 在单独的线程中执行异步任务
+    thread = threading.Thread(target=async_task)
     thread.start()
 
 def schedule_async_task():
