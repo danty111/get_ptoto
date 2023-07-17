@@ -6,7 +6,6 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 
-
 import requests
 from PIL import Image
 from PIL.Image import Quantize
@@ -766,7 +765,7 @@ class GetValue():
 
     @staticmethod
     def get_all_boat():
-
+        print("当前执行时间",datetime.now())
         try:
             # 读取配置文件
             config = json.loads(IniFileEditor().read_ini_file())

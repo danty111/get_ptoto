@@ -194,7 +194,7 @@ if __name__ == '__main__':
     def thread_func():
         # 创建一个定时任务调度器
         scheduler = BackgroundScheduler()
-
+        GetValue.get_all_boat()
         # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
         scheduler.add_job(GetValue.get_all_boat, 'interval', hours=0.1)
 
