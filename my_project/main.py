@@ -187,7 +187,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     scheduler = BackgroundScheduler()
     # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
-    scheduler.add_job(GetValue.get_all_boat, 'interval', minutes=10)
+    scheduler.add_job(GetValue.get_all_boat, 'interval', minutes=20)
     print("启动定时任务")
     # 启动定时任务调度器
     scheduler.start()
