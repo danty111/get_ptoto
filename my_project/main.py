@@ -186,23 +186,15 @@ if __name__ == '__main__':
     # 在主线程中注册信号处理函数
     signal.signal(signal.SIGINT, signal_handler)
     scheduler = BackgroundScheduler()
+    # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
+    scheduler.add_job(GetValue.get_all_boat, 'interval', minutes=10)
+    print("启动定时任务")
+    # 启动定时任务调度器
+    scheduler.start()
 
-    # 创建一个子线程，并在其中执行定时任务调度器
-    def thread_func():
-        # 创建一个定时任务调度器
-        GetValue.get_all_boat()
-        # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
-        scheduler.add_job(GetValue.get_all_boat, 'interval',minutes=10)
-        print("启动定时任务")
-        # 启动定时任务调度器
-        scheduler.start()
+    # 创建一个线程，异步执行 GetValue.get_all_boat() 方法
+    get_all_boat_thread = threading.Thread(target=GetValue.get_all_boat)
+    get_all_boat_thread.start()
 
-
-    t = threading.Thread(target=thread_func)
-    t.start()
-
-    # 在主线程中启动 API 服务
+    # 启动 API 服务
     api.run(port=8888, host='0.0.0.0', debug=True)
-
-    # 等待子线程结束
-    t.join()

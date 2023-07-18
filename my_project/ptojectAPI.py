@@ -792,7 +792,7 @@ class GetValue():
                     save_path = config['boat']['boat_name_excel'].split("boat")[
                                     0] + "storage_boat/" + image_name + ".jpeg"
                     common_method.pic_compress(image_file, save_path)
-                    print("成功储存", i, "到", save_path)
+                    print("----------------成功储存", i, "到", save_path)
 
             try:
                 with ThreadPoolExecutor(max_workers=num_threads) as executor:
