@@ -766,40 +766,40 @@ class GetValue():
     @staticmethod
     def get_all_boat():
         print("当前执行时间",datetime.now())
-        try:
-            # 读取配置文件
-            config = json.loads(IniFileEditor().read_ini_file())
-
-            # 获取船只名称列表
-            name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
-
-            # 打乱列表顺序
-            random.shuffle(name_list)
-
-            # 将列表随机分成 10 份
-            num_threads = 10
-            chunk_size = len(name_list) // num_threads
-            chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
-
-            # 如果有余数，将余数分配到最后一个分片中
-            if len(name_list) % num_threads != 0:
-                chunks[-1] += name_list[-(len(name_list) % num_threads):]
-
-            # 执行多线程任务
-            def save_image_names(names):
-                for i in names:
-                    image_file, image_name = MakePhoto("boat", i).make_boat()
-                    save_path = config['boat']['boat_name_excel'].split("boat")[
-                                    0] + "storage_boat/" + image_name + ".jpeg"
-                    common_method.pic_compress(image_file, save_path)
-                    print("成功储存", i, "到", save_path)
-
-            try:
-                with ThreadPoolExecutor(max_workers=num_threads) as executor:
-                    futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
-            finally:
-                executor.shutdown(wait=False)
-            print("所有数据执行完毕")
-            # 等待所有线程执行结束
-        except Exception as e:
-            raise Exception("获取图片错误", e)
+        # try:
+        #     # 读取配置文件
+        #     config = json.loads(IniFileEditor().read_ini_file())
+        #
+        #     # 获取船只名称列表
+        #     name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
+        #
+        #     # 打乱列表顺序
+        #     random.shuffle(name_list)
+        #
+        #     # 将列表随机分成 10 份
+        #     num_threads = 10
+        #     chunk_size = len(name_list) // num_threads
+        #     chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+        #
+        #     # 如果有余数，将余数分配到最后一个分片中
+        #     if len(name_list) % num_threads != 0:
+        #         chunks[-1] += name_list[-(len(name_list) % num_threads):]
+        #
+        #     # 执行多线程任务
+        #     def save_image_names(names):
+        #         for i in names:
+        #             image_file, image_name = MakePhoto("boat", i).make_boat()
+        #             save_path = config['boat']['boat_name_excel'].split("boat")[
+        #                             0] + "storage_boat/" + image_name + ".jpeg"
+        #             common_method.pic_compress(image_file, save_path)
+        #             print("成功储存", i, "到", save_path)
+        #
+        #     try:
+        #         with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        #             futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+        #     finally:
+        #         executor.shutdown(wait=False)
+        #     print("所有数据执行完毕")
+        #     # 等待所有线程执行结束
+        # except Exception as e:
+        #     raise Exception("获取图片错误", e)

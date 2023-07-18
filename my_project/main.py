@@ -176,23 +176,16 @@ def set_card_template():
     else:
         return abort(400, description='以下字段与接口参数不同:{}'.format(message))
 
-scheduler = BackgroundScheduler()
+
 def signal_handler(signum, frame):
     print(f"Received signal {signum}, stopping server gracefully")
-    # 关闭 API 服务
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
 
-    # 停止定时任务调度器
-    scheduler.shutdown()
 
 if __name__ == '__main__':
 
     # 在主线程中注册信号处理函数
     signal.signal(signal.SIGINT, signal_handler)
-
+    scheduler = BackgroundScheduler()
 
     # 创建一个子线程，并在其中执行定时任务调度器
     def thread_func():
@@ -200,7 +193,7 @@ if __name__ == '__main__':
 
         GetValue.get_all_boat()
         # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
-        scheduler.add_job(GetValue.get_all_boat, 'interval', hours=0.1)
+        scheduler.add_job(GetValue.get_all_boat, 'interval', hours=0.01)
         print("启动定时任务")
         # 启动定时任务调度器
         scheduler.start()
