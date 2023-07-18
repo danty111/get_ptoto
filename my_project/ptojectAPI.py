@@ -4,7 +4,7 @@ import re
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-
+import asyncio
 
 import requests
 from PIL import Image
@@ -786,7 +786,7 @@ class GetValue():
                 chunks[-1] += name_list[-(len(name_list) % num_threads):]
 
             # 执行多线程任务
-            def save_image_names(names):
+            async def save_image_names(names):
                 for i in names:
                     image_file, image_name = MakePhoto("boat", i).make_boat()
                     save_path = config['boat']['boat_name_excel'].split("boat")[
@@ -795,10 +795,13 @@ class GetValue():
                     print("----------------成功储存", i, "到", save_path)
 
             try:
-                with ThreadPoolExecutor(max_workers=num_threads) as executor:
-                    futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+                loop = asyncio.get_event_loop()
+                tasks = [loop.create_task(save_image_names(chunk)) for chunk in chunks]
+                loop.run_until_complete(asyncio.wait(tasks))
+                print("所有数据执行完毕")
             finally:
-                executor.shutdown(wait=False)
+                loop.close()
+                # executor.shutdown(wait=True)
             print("所有数据执行完毕")
             # 等待所有线程执行结束
         except Exception as e:
