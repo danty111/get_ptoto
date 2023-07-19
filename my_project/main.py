@@ -17,7 +17,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
 from flask import jsonify, abort, request, make_response
 from common import IniFileEditor, MakePhotos, GetExcelValue, common_method
-from ptojectAPI import MakePhoto, GetValue
+from ptojectAPI import MakePhoto, GetValue,BoatPhoto
 from retrying import retry
 import sys
 import urllib.parse
@@ -187,13 +187,13 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     scheduler = BackgroundScheduler()
     # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
-    scheduler.add_job(GetValue.get_all_boat, 'interval', minutes=20)
+    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', minutes=20)
     print("启动定时任务")
     # 启动定时任务调度器
     scheduler.start()
 
     # 创建一个线程，异步执行 GetValue.get_all_boat() 方法
-    get_all_boat_thread = threading.Thread(target=GetValue.get_all_boat)
+    get_all_boat_thread = threading.Thread(target=BoatPhoto.get_all_boat)
     get_all_boat_thread.start()
 
     # 启动 API 服务
