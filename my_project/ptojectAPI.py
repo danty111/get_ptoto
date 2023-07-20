@@ -800,6 +800,7 @@ class BoatPhoto:
             tasks = [loop.create_task(save_image_names(chunk)) for chunk in chunks]
             loop.run_until_complete(asyncio.gather(*tasks))
             print("所有数据执行完毕")
+            loop.shutdown_asyncgens()
             loop.close()
         except Exception as e:
             raise Exception("获取图片错误", e)
