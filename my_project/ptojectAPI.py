@@ -4,7 +4,7 @@ import re
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-import asyncio
+
 
 import requests
 from PIL import Image
@@ -766,7 +766,7 @@ class GetValue():
 class BoatPhoto:
     @staticmethod
     def get_all_boat():
-        print("当前执行时间",datetime.now())
+        print("当前执行时间", datetime.now())
         try:
             # 读取配置文件
             config = json.loads(IniFileEditor().read_ini_file())
@@ -787,7 +787,7 @@ class BoatPhoto:
                 chunks[-1] += name_list[-(len(name_list) % num_threads):]
 
             # 执行多线程任务
-            async def save_image_names(names):
+            def save_image_names(names):
                 for i in names:
                     image_file, image_name = MakePhoto("boat", i).make_boat()
                     save_path = config['boat']['boat_name_excel'].split("boat")[
@@ -795,12 +795,13 @@ class BoatPhoto:
                     common_method.pic_compress(image_file, save_path)
                     print("----------------成功储存", i, "到", save_path)
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            tasks = [loop.create_task(save_image_names(chunk)) for chunk in chunks]
-            loop.run_until_complete(asyncio.gather(*tasks))
+            with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+
+                # 等待所有线程执行结束
+                for future in futures:
+                    future.result()
+
             print("所有数据执行完毕")
-            loop.shutdown_asyncgens()
-            loop.close()
         except Exception as e:
             raise Exception("获取图片错误", e)
