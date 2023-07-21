@@ -1,6 +1,8 @@
+import _thread
 import random
 import json
 import re
+import threading
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
@@ -802,6 +804,17 @@ class BoatPhoto:
                 for future in futures:
                     future.result()
 
+            # 获取当前活跃的线程数
+            active_threads = threading.active_count()
+            print(f"当前活跃的线程数为：{active_threads}")
+
+            # 获取所有线程的列表
+            all_threads = threading.enumerate()
+            print(f"所有线程的列表为：{all_threads}")
+
+            # 获取当前线程的ID
+            current_thread_id = _thread.get_ident()
+            print(f"当前线程的ID为：{current_thread_id}")
             print("所有数据执行完毕")
         except Exception as e:
             raise Exception("获取图片错误", e)

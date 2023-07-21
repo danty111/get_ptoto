@@ -192,9 +192,9 @@ if __name__ == '__main__':
     # 启动定时任务调度器
     scheduler.start()
 
-    # # 创建一个线程，异步执行 GetValue.get_all_boat() 方法
-    # get_all_boat_thread = threading.Thread(target=BoatPhoto.get_all_boat)
-    # get_all_boat_thread.start()
+    # 创建一个线程，异步执行 GetValue.get_all_boat() 方法
+    get_all_boat_thread = threading.Thread(target=BoatPhoto.get_all_boat)
+    get_all_boat_thread.start()
 
     # 启动 API 服务
     api.run(port=8888, host='0.0.0.0', debug=True)
