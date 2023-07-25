@@ -779,48 +779,42 @@ class BoatPhoto:
             # 打乱列表顺序
             random.shuffle(name_list)
 
-            for i in name_list:
-                image_file, image_name = MakePhoto("boat", i).make_boat()
-                save_path = config['boat']['boat_name_excel'].split("boat")[
-                                0] + "storage_boat/" + image_name + ".jpeg"
-                common_method.pic_compress(image_file, save_path)
-                print("----------------成功储存", i, "到", save_path)
-            # # 将列表随机分成 10 份
-            # num_threads = 10
-            # chunk_size = len(name_list) // num_threads
-            # chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
-            #
-            # # 如果有余数，将余数分配到最后一个分片中
-            # if len(name_list) % num_threads != 0:
-            #     chunks[-1] += name_list[-(len(name_list) % num_threads):]
-            #
-            # # 执行多线程任务
-            # def save_image_names(names):
-            #     for i in names:
-            #         image_file, image_name = MakePhoto("boat", i).make_boat()
-            #         save_path = config['boat']['boat_name_excel'].split("boat")[
-            #                         0] + "storage_boat/" + image_name + ".jpeg"
-            #         common_method.pic_compress(image_file, save_path)
-            #         print("----------------成功储存", i, "到", save_path)
-            #
-            # with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            #     futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
-            #
-            #     # 等待所有线程执行结束
-            #     for future in futures:
-            #         future.result()
-            #
-            # # 获取当前活跃的线程数
-            # active_threads = threading.active_count()
-            # print(f"当前活跃的线程数为：{active_threads}")
-            #
-            # # 获取所有线程的列表
-            # all_threads = threading.enumerate()
-            # print(f"所有线程的列表为：{all_threads}")
-            #
-            # # 获取当前线程的ID
-            # current_thread_id = _thread.get_ident()
-            # print(f"当前线程的ID为：{current_thread_id}")
-            # print("所有数据执行完毕")
+            # 将列表随机分成 10 份
+            num_threads = 10
+            chunk_size = len(name_list) // num_threads
+            chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+
+            # 如果有余数，将余数分配到最后一个分片中
+            if len(name_list) % num_threads != 0:
+                chunks[-1] += name_list[-(len(name_list) % num_threads):]
+
+            # 执行多线程任务
+            def save_image_names(names):
+                for i in names:
+                    image_file, image_name = MakePhoto("boat", i).make_boat()
+                    save_path = config['boat']['boat_name_excel'].split("boat")[
+                                    0] + "storage_boat/" + image_name + ".jpeg"
+                    common_method.pic_compress(image_file, save_path)
+                    print("----------------成功储存", i, "到", save_path)
+
+            with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+
+                # 等待所有线程执行结束
+                for future in futures:
+                    future.result()
+
+            # 获取当前活跃的线程数
+            active_threads = threading.active_count()
+            print(f"当前活跃的线程数为：{active_threads}")
+
+            # 获取所有线程的列表
+            all_threads = threading.enumerate()
+            print(f"所有线程的列表为：{all_threads}")
+
+            # 获取当前线程的ID
+            current_thread_id = _thread.get_ident()
+            print(f"当前线程的ID为：{current_thread_id}")
+            print("所有数据执行完毕")
         except Exception as e:
             raise Exception("获取图片错误", e)
