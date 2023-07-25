@@ -818,3 +818,6 @@ class BoatPhoto:
             print("所有数据执行完毕")
         except Exception as e:
             raise Exception("获取图片错误", e)
+        finally:
+            # 释放资源，确保程序正常退出
+            ThreadPoolExecutor().shutdown(wait=False)
