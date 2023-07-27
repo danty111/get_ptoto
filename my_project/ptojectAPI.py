@@ -1,11 +1,10 @@
-import _thread
 import random
 import json
 import re
-import threading
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+
 
 
 import requests
@@ -765,10 +764,9 @@ class GetValue():
 
         return boat_value_dict
 
-class BoatPhoto:
     @staticmethod
     def get_all_boat():
-        print("当前执行时间", datetime.now())
+        print("当前执行时间",datetime.now())
         try:
             # 读取配置文件
             config = json.loads(IniFileEditor().read_ini_file())
@@ -795,33 +793,14 @@ class BoatPhoto:
                     save_path = config['boat']['boat_name_excel'].split("boat")[
                                     0] + "storage_boat/" + image_name + ".jpeg"
                     common_method.pic_compress(image_file, save_path)
-                    print("----------------成功储存", i, "到", save_path)
-                threading.current_thread().join()  # 等待当前子线程结束
+                    print("成功储存", i, "到", save_path)
 
-            with ThreadPoolExecutor(max_workers=num_threads) as executor:
-                futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
-
-                # 等待所有线程执行结束
-                for future in futures:
-                    if not future.done():  # 如果线程没有完成，则不调用future.result()
-                        print(future + "————————没有结束")
-                        continue
-                    future.result()  # 等待线程完成并返回结果
-
-            # 获取当前活跃的线程数
-            active_threads = threading.active_count()
-            print(f"当前活跃的线程数为：{active_threads}")
-
-            # 获取所有线程的列表
-            all_threads = threading.enumerate()
-            print(f"所有线程的列表为：{all_threads}")
-
-            # 获取当前线程的ID
-            current_thread_id = _thread.get_ident()
-            print(f"当前线程的ID为：{current_thread_id}")
+            try:
+                with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                    futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+            finally:
+                executor.shutdown(wait=False)
             print("所有数据执行完毕")
+            # 等待所有线程执行结束
         except Exception as e:
             raise Exception("获取图片错误", e)
-        finally:
-            # 释放资源，确保程序正常退出
-            ThreadPoolExecutor().shutdown(wait=True)

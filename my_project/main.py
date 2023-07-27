@@ -182,19 +182,23 @@ def signal_handler(signum, frame):
 
 
 if __name__ == '__main__':
-
     # 在主线程中注册信号处理函数
     signal.signal(signal.SIGINT, signal_handler)
     scheduler = BackgroundScheduler(max_instances=3)
     # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
-    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', minutes=10)
+    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', minutes=10,eplace_existing=True)
     print("启动定时任务")
     # 启动定时任务调度器
     scheduler.start()
 
-    # 创建一个线程，异步执行 GetValue.get_all_boat() 方法
-    get_all_boat_thread = threading.Thread(target=BoatPhoto.get_all_boat)
-    get_all_boat_thread.start()
+
+    # 异步执行 BoatPhoto.get_all_boat() 方法
+    async def run_get_all_boat():
+        await BoatPhoto.get_all_boat()
+
+    # 使用 asyncio.run() 函数运行异步方法
+    asyncio.run(run_get_all_boat())
 
     # 启动 API 服务
     api.run(port=8888, host='0.0.0.0', debug=True)
+
