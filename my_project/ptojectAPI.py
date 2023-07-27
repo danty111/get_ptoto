@@ -796,13 +796,17 @@ class BoatPhoto:
                                     0] + "storage_boat/" + image_name + ".jpeg"
                     common_method.pic_compress(image_file, save_path)
                     print("----------------成功储存", i, "到", save_path)
+                threading.current_thread().join()  # 等待当前子线程结束
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
                 futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
 
                 # 等待所有线程执行结束
                 for future in futures:
-                    future.result()
+                    if not future.done():  # 如果线程没有完成，则不调用future.result()
+                        print(future + "————————没有结束")
+                        continue
+                    future.result()  # 等待线程完成并返回结果
 
             # 获取当前活跃的线程数
             active_threads = threading.active_count()
