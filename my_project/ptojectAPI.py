@@ -820,4 +820,4 @@ class BoatPhoto:
             raise Exception("获取图片错误", e)
         finally:
             # 释放资源，确保程序正常退出
-            ThreadPoolExecutor().shutdown(wait=False)
+            ThreadPoolExecutor().shutdown(wait=True)
