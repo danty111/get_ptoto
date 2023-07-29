@@ -107,7 +107,7 @@ class MakePhoto:
         # self.back_ground_image = common_method.compress_image(self.back_ground_image, 10)
         return self.back_ground_image
 
-    def make_boat(self):
+    def make_boat(self,boat_value = {}):
 
         if self.template_image_name != self.parameter_dic["template_path"] or self.section["need_change"] != "false":
             get_value = MakePhotos(self.template_image).recognize_text(self.section["ttf_path"],
@@ -123,7 +123,7 @@ class MakePhoto:
             # 将判断改变字段回填false
             IniFileEditor().set_value("boat", "need_change", "false")
         # 获取舰船名称
-        msg = GetValue(self.name).get_boat(self.config[self.interface]["boat_name_excel"])
+        msg = GetValue(self.name).get_boat(self.config[self.interface]["boat_name_excel"],boat_value=boat_value)
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["boat_image"], self.template["boat_image_size"],
                             self.template["boat_image_coordinate"], hierarchy="upper")
@@ -246,21 +246,35 @@ class GetValue():
         else:
             raise ValueError("Without this user")
 
-    def get_boat(self, filename):
+    def get_boat(self, filename, boat_value=None):
+        if boat_value is None:
+            boat_value = {}
         name_list = GetExcelValue(self.name).get_boat_name(filename)
         if name_list == None:
             raise Exception("船表格里没有当前飞船", self.name)
         self.name = name_list[0]
         self.add_name = name_list[2]
 
-        res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+        if boat_value["boat_json"] == "":
+            res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+        else:
+            res1 = boat_value["boat_json"]
         res2 = Request.get_html_encode(f"https://starcitizen.tools/{self.name}")
-        ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
-        data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
 
-        boat_response = requests.get(ship_hardpoints)
-        json_data = boat_response.content.decode('utf-8-sig')
-        boat_weapon_list = json.loads(json_data)
+        if boat_value["ship_hardpoints"] == "":
+            ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+            boat_response = requests.get(ship_hardpoints)
+            json_data = boat_response.content.decode('utf-8-sig')
+            boat_weapon_list = json.loads(json_data)
+        else:
+            boat_weapon_list = boat_value["ship_hardpoints"]
+
+        if boat_value["data_version"] == "":
+            data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+        else:
+            data_version = boat_value["data_version"]
+
+
 
         for boat_data in res1:
             if self.add_name.lower() == boat_data["ClassName"].lower():
@@ -769,6 +783,16 @@ class BoatPhoto:
     @staticmethod
     def get_all_boat():
         print("当前执行时间", datetime.now())
+
+        #爬取一些固定数据，避免多次请求
+        boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+        ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+        boat_response = requests.get(ship_hardpoints)
+        json_data = boat_response.content.decode('utf-8-sig')
+        boat_weapon_list = json.loads(json_data)
+
+        data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+
         try:
             # 读取配置文件
             config = json.loads(IniFileEditor().read_ini_file())
@@ -788,14 +812,15 @@ class BoatPhoto:
             if len(name_list) % num_threads != 0:
                 chunks[-1] += name_list[-(len(name_list) % num_threads):]
 
+            boat_value = {"boat_json": boat_json,"ship_hardpoints":boat_weapon_list,"data_version":data_version}
             # 执行多线程任务
             def save_image_names(names):
                 for i in names:
-                    image_file, image_name = MakePhoto("boat", i).make_boat()
+                    image_file, image_name = MakePhoto("boat", i).make_boat(boat_value=boat_value)
                     save_path = config['boat']['boat_name_excel'].split("boat")[
                                     0] + "storage_boat/" + image_name + ".jpeg"
                     common_method.pic_compress(image_file, save_path)
-                    print(time.time(),"----------------成功储存", i, "到", save_path)
+                    print("----------------成功储存", i, "到", save_path,"\n")
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
                 futures = [executor.submit(save_image_names, chunk) for chunk in chunks]

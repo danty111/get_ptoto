@@ -185,9 +185,9 @@ if __name__ == '__main__':
 
     # 在主线程中注册信号处理函数
     signal.signal(signal.SIGINT, signal_handler)
-    scheduler = BackgroundScheduler(max_instances=3)
-    # 定义一个任务，每个小时执行一次 GetValue.get_all_boat()
-    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', minutes=10, replace_existing=True)
+    scheduler = BackgroundScheduler()
+    # 定义一个任务，每个小时执行一次
+    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', minutes=5, replace_existing=True, id='get_photo')
     print("启动定时任务")
     # 启动定时任务调度器
     scheduler.start()
