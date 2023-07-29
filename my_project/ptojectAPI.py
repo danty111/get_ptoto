@@ -816,11 +816,11 @@ class BoatPhoto:
             # 执行多线程任务
             def save_image_names(names):
                 for i in names:
-                    image_file, image_name = MakePhoto("boat", i).make_boat(boat_value=boat_value)
-                    save_path = config['boat']['boat_name_excel'].split("boat")[
-                                    0] + "storage_boat/" + image_name + ".jpeg"
-                    common_method.pic_compress(image_file, save_path)
-                    print("----------------成功储存", i, "到", save_path,"\n")
+                    # image_file, image_name = MakePhoto("boat", i).make_boat(boat_value=boat_value)
+                    # save_path = config['boat']['boat_name_excel'].split("boat")[
+                    #                 0] + "storage_boat/" + image_name + ".jpeg"
+                    # common_method.pic_compress(image_file, save_path)
+                    print("----------------成功储存", i, "到", "save_path","\n")
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
                 futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
@@ -841,6 +841,7 @@ class BoatPhoto:
             current_thread_id = _thread.get_ident()
             print(f"当前线程的ID为：{current_thread_id}")
             print("所有数据执行完毕")
+
         except Exception as e:
             raise Exception("获取图片错误", e)
         finally:
