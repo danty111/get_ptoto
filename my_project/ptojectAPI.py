@@ -107,7 +107,8 @@ class MakePhoto:
         # self.back_ground_image = common_method.compress_image(self.back_ground_image, 10)
         return self.back_ground_image
 
-    def make_boat(self,boat_value = {}):
+    def make_boat(self, boat_value=None):
+
 
         if self.template_image_name != self.parameter_dic["template_path"] or self.section["need_change"] != "false":
             get_value = MakePhotos(self.template_image).recognize_text(self.section["ttf_path"],
@@ -816,11 +817,11 @@ class BoatPhoto:
             # 执行多线程任务
             def save_image_names(names):
                 for i in names:
-                    # image_file, image_name = MakePhoto("boat", i).make_boat(boat_value=boat_value)
-                    # save_path = config['boat']['boat_name_excel'].split("boat")[
-                    #                 0] + "storage_boat/" + image_name + ".jpeg"
-                    # common_method.pic_compress(image_file, save_path)
-                    print("----------------成功储存", i, "到", "save_path","\n")
+                    image_file, image_name = MakePhoto("boat", i).make_boat(boat_value=boat_value)
+                    save_path = config['boat']['boat_name_excel'].split("boat")[
+                                    0] + "storage_boat/" + image_name + ".jpeg"
+                    common_method.pic_compress(image_file, save_path)
+                    print("----------------成功储存", i, "到", save_path,"\n")
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
                 futures = [executor.submit(save_image_names, chunk) for chunk in chunks]

@@ -187,7 +187,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     scheduler = BackgroundScheduler()
     # 定义一个任务，每个小时执行一次
-    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', minutes=1, replace_existing=True, id='get_photo')
+    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', minutes=5, replace_existing=True, id='get_photo')
     print("启动定时任务")
     # 启动定时任务调度器
     scheduler.start()
