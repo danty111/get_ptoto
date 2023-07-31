@@ -834,9 +834,13 @@ class BoatPhoto:
                         future.result()
                 except concurrent.futures.TimeoutError:
                     print("超时异常：任务未能在6分钟内完成")
-                finally:
-                    executor.shutdown(wait=False)
 
+        except Exception as e:
+            print("获取图片错误", e)
+        finally:
+            # 释放资源，确保程序正常退出
+            concurrent.futures.ThreadPoolExecutor().shutdown(wait=False)
+            executor.shutdown(wait=False)
             # 获取当前活跃的线程数
             active_threads = threading.active_count()
             print(f"当前活跃的线程数为：{active_threads}")
@@ -849,9 +853,3 @@ class BoatPhoto:
             current_thread_id = threading.get_ident()
             print(f"当前线程的ID为：{current_thread_id}")
             print("所有数据执行完毕")
-
-        except Exception as e:
-            print("获取图片错误", e)
-        finally:
-            # 释放资源，确保程序正常退出
-            concurrent.futures.ThreadPoolExecutor().shutdown(wait=False)
