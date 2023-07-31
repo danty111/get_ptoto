@@ -843,15 +843,15 @@ class BoatPhoto:
                 try:
                     for future in concurrent.futures.as_completed(futures, timeout=600):
                         future.result()
+                        # 释放资源，确保程序正常退出
+                        concurrent.futures.ThreadPoolExecutor().shutdown(wait=False)
+                        executor.shutdown(wait=False)
                 except concurrent.futures.TimeoutError:
                     print("超时异常：任务未能在6分钟内完成")
 
         except Exception as e:
             print("获取图片错误", e)
         finally:
-            # 释放资源，确保程序正常退出
-            concurrent.futures.ThreadPoolExecutor().shutdown(wait=False)
-            executor.shutdown(wait=False)
             for thread in threading.enumerate():
                 if thread.is_alive():
                     # 获取当前活跃的线程数
