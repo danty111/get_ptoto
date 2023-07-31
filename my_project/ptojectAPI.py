@@ -801,6 +801,7 @@ class BoatPhoto:
 
             # 获取船只名称列表
             name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
+            print(f"共需执行{len(name_list)}个数据")
 
             # 打乱列表顺序
             random.shuffle(name_list)
@@ -832,7 +833,9 @@ class BoatPhoto:
                     for future in concurrent.futures.as_completed(futures, timeout=240):
                         future.result()
                 except concurrent.futures.TimeoutError:
-                    print("超时异常：任务未能在5分钟内完成")
+                    print("超时异常：任务未能在6分钟内完成")
+                finally:
+                    executor.shutdown(wait=False)
 
             # 获取当前活跃的线程数
             active_threads = threading.active_count()
