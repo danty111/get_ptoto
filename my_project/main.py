@@ -177,24 +177,9 @@ def set_card_template():
         return abort(400, description='以下字段与接口参数不同:{}'.format(message))
 
 
-def signal_handler(signum, frame):
-    print(f"Received signal {signum}, stopping server gracefully")
+
 
 
 if __name__ == '__main__':
-
-    # 在主线程中注册信号处理函数
-    signal.signal(signal.SIGINT, signal_handler)
-    scheduler = BackgroundScheduler()
-    # 定义一个任务，每个小时执行一次
-    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', minutes=5, replace_existing=True, id='get_photo')
-    print("启动定时任务")
-    # 启动定时任务调度器
-    scheduler.start()
-
-    # 创建一个线程，异步执行方法
-    get_all_boat_thread = threading.Thread(target=BoatPhoto.get_all_boat)
-    get_all_boat_thread.start()
-
     # 启动 API 服务
-    api.run(port=8888, host='0.0.0.0', debug=True)
+    api.run(port=8888, host='0.0.0.0')
