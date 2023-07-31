@@ -785,7 +785,18 @@ class BoatPhoto:
     @staticmethod
     def get_all_boat():
         print("当前执行时间", datetime.now())
+        # 获取当前活跃的线程数
+        active_threads = threading.active_count()
+        print(f"当前活跃的线程数为：{active_threads}")
 
+        # 获取所有线程的列表
+        all_threads = threading.enumerate()
+        print(f"所有线程的列表为：{all_threads}")
+
+        # 获取当前线程的ID
+        current_thread_id = threading.get_ident()
+        print(f"当前线程的ID为：{current_thread_id}")
+        print("所有数据执行完毕")
         # 爬取一些固定数据，避免多次请求
         boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
         ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
@@ -841,15 +852,17 @@ class BoatPhoto:
             # 释放资源，确保程序正常退出
             concurrent.futures.ThreadPoolExecutor().shutdown(wait=False)
             executor.shutdown(wait=False)
-            # 获取当前活跃的线程数
-            active_threads = threading.active_count()
-            print(f"当前活跃的线程数为：{active_threads}")
+            for thread in threading.enumerate():
+                if thread.is_alive():
+                    # 获取当前活跃的线程数
+                    active_threads = threading.active_count()
+                    print(f"当前活跃的线程数为：{active_threads}")
 
-            # 获取所有线程的列表
-            all_threads = threading.enumerate()
-            print(f"所有线程的列表为：{all_threads}")
+                    # 获取所有线程的列表
+                    all_threads = threading.enumerate()
+                    print(f"所有线程的列表为：{all_threads}")
 
-            # 获取当前线程的ID
-            current_thread_id = threading.get_ident()
-            print(f"当前线程的ID为：{current_thread_id}")
-            print("所有数据执行完毕")
+                    # 获取当前线程的ID
+                    current_thread_id = threading.get_ident()
+                    print(f"当前线程的ID为：{current_thread_id}")
+                    print("所有数据执行完毕")
