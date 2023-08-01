@@ -852,11 +852,6 @@ class BoatPhoto:
         except Exception as e:
             print("获取图片错误", e)
         finally:
-            # # 检查任务状态，如果任务在运行则终止
-            # try:
-            #     scheduler.remove_job('get_photo')
-            # except:
-            #     pass
             for thread in threading.enumerate():
                 if thread.is_alive():
                     # 获取当前活跃的线程数
@@ -871,3 +866,8 @@ class BoatPhoto:
                     current_thread_id = threading.get_ident()
                     print(f"当前线程的ID为：{current_thread_id}")
                     print("所有数据执行完毕")
+            # 检查任务状态，如果任务在运行则终止
+            try:
+                scheduler.remove_job('get_photo')
+            except:
+                pass
