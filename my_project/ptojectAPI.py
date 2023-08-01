@@ -796,7 +796,6 @@ class BoatPhoto:
         # 获取当前线程的ID
         current_thread_id = threading.get_ident()
         print(f"当前线程的ID为：{current_thread_id}")
-        print("所有数据执行完毕")
         # 爬取一些固定数据，避免多次请求
         boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
         ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
@@ -868,6 +867,7 @@ class BoatPhoto:
                     print("所有数据执行完毕")
             # 检查任务状态，如果任务在运行则终止
             try:
-                scheduler.remove_job('get_photo')
+                if scheduler != None:
+                    scheduler.remove_job('get_photo')
             except:
                 pass
