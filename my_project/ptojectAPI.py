@@ -842,10 +842,9 @@ class BoatPhoto:
                 # 等待所有线程执行结束，并设置超时时间为10分钟
                 try:
                     for future in concurrent.futures.as_completed(futures, timeout=600):
-                        future.result()
                         # 释放资源，确保程序正常退出
-                        concurrent.futures.ThreadPoolExecutor().shutdown(wait=False)
-                        executor.shutdown(wait=False)
+                        concurrent.futures.ThreadPoolExecutor().shutdown(wait=True)
+                        executor.shutdown(wait=True)
                 except concurrent.futures.TimeoutError:
                     print("超时异常：任务未能在6分钟内完成")
 
