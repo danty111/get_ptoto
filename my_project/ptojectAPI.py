@@ -783,7 +783,7 @@ class GetValue():
 
 class BoatPhoto:
     @staticmethod
-    def get_all_boat():
+    def get_all_boat(scheduler = None):
         print("当前执行时间", datetime.now())
         # 获取当前活跃的线程数
         active_threads = threading.active_count()
@@ -852,6 +852,12 @@ class BoatPhoto:
         except Exception as e:
             print("获取图片错误", e)
         finally:
+            # 检查任务状态，如果任务在运行则终止
+            try:
+                scheduler.remove_job('get_photo')
+            except:
+                pass
+
             for thread in threading.enumerate():
                 if thread.is_alive():
                     # 获取当前活跃的线程数
