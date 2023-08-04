@@ -16,7 +16,6 @@ from lxml import etree
 
 from common import IniFileEditor, MakePhotos, Request, common_method, GetExcelValue
 
-
 class MakePhoto:
     def __init__(self, interface, name):
         self.config = json.loads(IniFileEditor().read_ini_file())
@@ -780,94 +779,95 @@ class GetValue():
         boat_value_dict["collection_time"] = current_time_str
 
         return boat_value_dict
-
+lock = threading.Lock()
 class BoatPhoto:
+
     @staticmethod
     def get_all_boat(scheduler = None):
-        print("当前执行时间", datetime.now())
-        # 获取当前活跃的线程数
-        active_threads = threading.active_count()
-        print(f"当前活跃的线程数为：{active_threads}")
+        with lock:
+            print("当前执行时间", datetime.now())
+            # 获取当前活跃的线程数
+            active_threads = threading.active_count()
+            print(f"当前活跃的线程数为：{active_threads}")
 
-        # 获取所有线程的列表
-        all_threads = threading.enumerate()
-        print(f"所有线程的列表为：{all_threads}")
+            # 获取所有线程的列表
+            all_threads = threading.enumerate()
+            print(f"所有线程的列表为：{all_threads}")
 
-        # 获取当前线程的ID
-        current_thread_id = threading.get_ident()
-        print(f"当前线程的ID为：{current_thread_id}")
-        # 爬取一些固定数据，避免多次请求
-        boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
-        ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
-        boat_response = requests.get(ship_hardpoints)
-        json_data = boat_response.content.decode('utf-8-sig')
-        boat_weapon_list = json.loads(json_data)
+            # 获取当前线程的ID
+            current_thread_id = threading.get_ident()
+            print(f"当前线程的ID为：{current_thread_id}")
+            # 爬取一些固定数据，避免多次请求
+            boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+            ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+            boat_response = requests.get(ship_hardpoints)
+            json_data = boat_response.content.decode('utf-8-sig')
+            boat_weapon_list = json.loads(json_data)
 
-        data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+            data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
 
-        try:
-            # 读取配置文件
-            config = json.loads(IniFileEditor().read_ini_file())
-
-            # 获取船只名称列表
-            name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
-            print(f"共需执行{len(name_list)}个数据")
-
-            # 打乱列表顺序
-            random.shuffle(name_list)
-
-            # 将列表随机分成 10 份
-            num_threads = 10
-            chunk_size = len(name_list) // num_threads
-            chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
-
-            # 如果有余数，将余数分配到最后一个分片中
-            if len(name_list) % num_threads != 0:
-                chunks[-1] += name_list[-(len(name_list) % num_threads):]
-
-            boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list, "data_version": data_version}
-            # 执行多线程任务
-            def save_image_names(names):
-                for i in names:
-                    image_file, image_name = MakePhoto("boat", i).make_boat(boat_value=boat_value)
-                    save_path = config['boat']['boat_name_excel'].split("boat")[
-                                    0] + "storage_boat/" + image_name + ".jpeg"
-                    common_method.pic_compress(image_file, save_path)
-                    print("----------------成功储存", i, "到", save_path, "\n")
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-                futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
-
-                # 等待所有线程执行结束，并设置超时时间为10分钟
-                try:
-                    for future in concurrent.futures.as_completed(futures, timeout=600):
-                        # future.result()
-                        # # 释放资源，确保程序正常退出
-                        concurrent.futures.ThreadPoolExecutor().shutdown(wait=False)
-                        executor.shutdown(wait=False)
-                except concurrent.futures.TimeoutError:
-                    print("超时异常：任务未能在6分钟内完成")
-
-        except Exception as e:
-            print("获取图片错误", e)
-        finally:
-            # 检查任务状态，如果任务在运行则终止
             try:
-                if scheduler != None:
-                    scheduler.remove_job('get_photo')
-            except:
-                pass
-            for thread in threading.enumerate():
-                if thread.is_alive():
-                    # 获取当前活跃的线程数
-                    active_threads = threading.active_count()
-                    print(f"当前活跃的线程数为：{active_threads}")
+                # 读取配置文件
+                config = json.loads(IniFileEditor().read_ini_file())
 
-                    # 获取所有线程的列表
-                    all_threads = threading.enumerate()
-                    print(f"所有线程的列表为：{all_threads}")
+                # 获取船只名称列表
+                name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
+                print(f"共需执行{len(name_list)}个数据")
 
-                    # 获取当前线程的ID
-                    current_thread_id = threading.get_ident()
-                    print(f"当前线程的ID为：{current_thread_id}")
-                    print("所有数据执行完毕")
+                # 打乱列表顺序
+                random.shuffle(name_list)
+
+                # 将列表随机分成 10 份
+                num_threads = 100
+                chunk_size = len(name_list) // num_threads
+                chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+
+                # 如果有余数，将余数分配到最后一个分片中
+                if len(name_list) % num_threads != 0:
+                    chunks[-1] += name_list[-(len(name_list) % num_threads):]
+
+                boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list, "data_version": data_version}
+                # 执行多线程任务
+                def save_image_names(names):
+                    for i in names:
+                        image_file, image_name = MakePhoto("boat", i).make_boat(boat_value=boat_value)
+                        save_path = config['boat']['boat_name_excel'].split("boat")[
+                                        0] + "storage_boat/" + image_name + ".jpeg"
+                        common_method.pic_compress(image_file, save_path)
+                        print(i,"--成功储存")
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+                    futures = [executor.submit(save_image_names, chunk) for chunk in chunks]
+
+                    # # 等待所有线程执行结束，并设置超时时间为10分钟
+                    # try:
+                    #     for future in concurrent.futures.as_completed(futures, timeout=600):
+                    #         future.result()
+                    # except concurrent.futures.TimeoutError:
+                    #     print("超时异常：任务未能在6分钟内完成")
+                    concurrent.futures.ThreadPoolExecutor().shutdown(wait=False)
+                    executor.shutdown(wait=False)
+
+            except Exception as e:
+                print("获取图片错误", e)
+            finally:
+                # 检查任务状态，如果任务在运行则终止
+                try:
+                    if scheduler != None:
+                        scheduler.remove_job('get_photo')
+                except:
+                    pass
+                for thread in threading.enumerate():
+                    if thread.is_alive():
+                        # 获取当前活跃的线程数
+                        active_threads = threading.active_count()
+                        print(f"当前活跃的线程数为：{active_threads}")
+
+                        # 获取所有线程的列表
+                        all_threads = threading.enumerate()
+                        print(f"所有线程的列表为：{all_threads}")
+
+                        # 获取当前线程的ID
+                        current_thread_id = threading.get_ident()
+                        print(f"当前线程的ID为：{current_thread_id}")
+                        print("所有数据执行完毕")
