@@ -871,4 +871,4 @@ class BoatPhoto:
                         current_thread_id = threading.get_ident()
                         print(f"当前线程的ID为：{current_thread_id}")
                         print("所有数据执行完毕")
-                time.sleep(300)
+                time.sleep(30)
