@@ -94,25 +94,20 @@ def cronJob():
     # 创建一个 BoatPhoto 对象
     boat_photo = BoatPhoto()
 
-    lock = threading.Lock()
+    # 创建一个线程，异步执行方法
+    get_all_boat_thread = threading.Thread(target=boat_photo.get_all_boat)
+    get_all_boat_thread.start()
+    #
+    # # 在主线程中注册信号处理函数
+    # signal.signal(signal.SIGINT, signal_handler)
+    # scheduler = BackgroundScheduler()
+    # # 定义一个任务，每个小时执行一次
+    # scheduler.add_job(BoatPhoto.get_all_boat,'interval',  args = [scheduler],minutes=5, replace_existing=False, id='get_all_boat')
 
-    def wrap():
-        with lock:
-            boat_photo.get_all_boat()
-
-    thread = threading.Thread(target=wrap)
-    thread.start()
-
-    # 在主线程中注册信号处理函数
-    signal.signal(signal.SIGINT, signal_handler)
-    scheduler = BackgroundScheduler()
-    # 定义一个任务，每个小时执行一次
-    scheduler.add_job(BoatPhoto.get_all_boat,'interval',  args = [scheduler],minutes=5, replace_existing=False, id='get_all_boat')
-
-    print("启动定时任务")
-    # 启动定时任务调度器
-    scheduler.remove_job('get_all_boat')
-    scheduler.start()
+    # print("启动定时任务")
+    # # 启动定时任务调度器
+    # scheduler.remove_job('get_all_boat')
+    # scheduler.start()
 
 #启动定时任务
 cronJob()

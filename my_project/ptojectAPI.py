@@ -784,7 +784,7 @@ class BoatPhoto:
 
     @staticmethod
     def get_all_boat(scheduler = None):
-        with lock:
+        while True:
             print("当前执行时间", datetime.now())
             # 获取当前活跃的线程数
             active_threads = threading.active_count()
@@ -871,3 +871,4 @@ class BoatPhoto:
                         current_thread_id = threading.get_ident()
                         print(f"当前线程的ID为：{current_thread_id}")
                         print("所有数据执行完毕")
+                time.sleep(300)
