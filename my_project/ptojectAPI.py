@@ -818,7 +818,7 @@ class BoatPhoto:
                 random.shuffle(name_list)
 
                 # 将列表随机分成 10 份
-                num_threads = 100
+                num_threads = 10
                 chunk_size = len(name_list) // num_threads
                 chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
 
