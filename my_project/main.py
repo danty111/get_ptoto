@@ -93,10 +93,14 @@ def signal_handler(signum, frame):
 def cronJob():
     # 创建一个 BoatPhoto 对象
     boat_photo = BoatPhoto()
-
     # 创建一个线程，异步执行方法
     get_all_boat_thread = threading.Thread(target=boat_photo.get_all_boat)
     get_all_boat_thread.start()
+    #
+    #
+    # scheduler = BlockingScheduler()
+    # scheduler.add_job(BoatPhoto.get_all_boat, 'interval', seconds=30, id='get_photo', args=[scheduler])
+    # scheduler.start()
     #
     # # 在主线程中注册信号处理函数
     # signal.signal(signal.SIGINT, signal_handler)
