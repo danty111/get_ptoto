@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 from PIL import Image
 from PIL.Image import Quantize
+from apscheduler.schedulers.blocking import BlockingScheduler
 from lxml import etree
 
 from common import IniFileEditor, MakePhotos, Request, common_method, GetExcelValue
@@ -785,88 +786,88 @@ lock = threading.Lock()
 
 
 class BoatPhoto:
+    scheduler = BlockingScheduler()
+    get_all_boat_thread = None
 
-    @staticmethod
-    def get_all_boat(scheduler):
-        while True:
-            print("当前执行时间", datetime.now())
+    def get_all_boat(self):
+        print("开始执行船只图片任务")
 
-            # 加锁打印线程信息
-            with lock:
-                active_threads = threading.active_count()
-                print(f"当前活跃的线程数为:{active_threads}")
+        # 加载静态数据
+        boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+        ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+        boat_response = requests.get(ship_hardpoints)
+        json_data = boat_response.content.decode('utf-8-sig')
+        boat_weapon_list = json.loads(json_data)
 
-                all_threads = threading.enumerate()
-                print(f"所有线程的列表为:{all_threads}")
+        data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
 
-                current_thread_id = threading.get_ident()
-                print(f"当前线程的ID为:{current_thread_id}")
+        boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list, "data_version": data_version}
 
-            # 加载静态数据
-            boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
-            ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
-            boat_response = requests.get(ship_hardpoints)
-            json_data = boat_response.content.decode('utf-8-sig')
-            boat_weapon_list = json.loads(json_data)
+        try:
+            # 读取配置文件
+            config = json.loads(IniFileEditor().read_ini_file())
 
-            data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+            # 获取船只名称列表
+            name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
+            print(f"共需执行{len(name_list)}个数据")
 
-            boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list, "data_version": data_version}
+            # 打乱列表顺序
+            random.shuffle(name_list)
 
-            try:
-                # 读取配置文件
-                config = json.loads(IniFileEditor().read_ini_file())
+            # 将列表随机分成 10 份
+            num_threads = 10
+            chunk_size = len(name_list) // num_threads
+            chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
 
-                # 获取船只名称列表
-                name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
-                print(f"共需执行{len(name_list)}个数据")
+            if len(name_list) % num_threads != 0:
+                chunks[-1] += name_list[-(len(name_list) % num_threads):]
 
-                # 打乱列表顺序
-                random.shuffle(name_list)
+            # 线程任务函数
+            def process_names(names):
+                for name in names:
+                    try:
+                        image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
 
-                # 将列表随机分成 10 份
-                num_threads = 10
-                chunk_size = len(name_list) // num_threads
-                chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+                        # 加锁保存文件
+                        with lock:
+                            save_path = config['boat']['boat_name_excel'].split("boat")[
+                                            0] + "storage_boat/" + image_name + ".jpeg"
+                            common_method.pic_compress(image_file, save_path)
 
-                if len(name_list) % num_threads != 0:
-                    chunks[-1] += name_list[-(len(name_list) % num_threads):]
+                        print(name, "--成功存储")
 
-                # 线程任务函数
-                def process_names(names):
-                    for name in names:
-                        try:
-                            image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
+                    except Exception as e:
+                        print(f"存储 {name} 时出错:{e}")
 
-                            # 加锁保存文件
-                            with lock:
-                                save_path = config['boat']['boat_name_excel'].split("boat")[
-                                                0] + "storage_boat/" + image_name + ".jpeg"
-                                common_method.pic_compress(image_file, save_path)
+                    # 加间隔
+                    time.sleep(random.uniform(0.5, 1))
 
-                            print(name, "--成功存储")
+            # 使用线程池
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+                futures = [executor.submit(process_names, chunk) for chunk in chunks]
 
-                        except Exception as e:
-                            print(f"存储 {name} 时出错:{e}")
+                # 等待所有线程结束
+                concurrent.futures.wait(futures)
 
-                        # 加间隔
-                        time.sleep(random.uniform(0.5, 1))
+            print("本次所有数据执行完毕")
 
-                # 使用线程池
-                with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-                    futures = [executor.submit(process_names, chunk) for chunk in chunks]
+        except Exception as e:
+            print("获取图片错误", e)
 
-                    # 等待所有线程结束
-                    concurrent.futures.wait(futures)
 
-                print("本次所有数据执行完毕")
+    def run_scheduler(self):
 
-            except Exception as e:
-                print("获取图片错误", e)
+        self.scheduler.add_job(self.get_all_boat, 'interval', seconds=5, id='get_photo', max_instances=1)
+        self.scheduler.start()
 
-            finally:
-                # 检查调度器
-                if scheduler:
-                    scheduler.remove_job('get_photo')
+        print("调度器已启动")
 
-            time.sleep(30)
+    def run_threaded(self):
+
+        if self.get_all_boat_thread and self.get_all_boat_thread.is_alive():
+            self.get_all_boat_thread.join()
+
+        self.get_all_boat_thread = threading.Thread(target=self.get_all_boat)
+        self.get_all_boat_thread.start()
+
+        print("线程已启动")
