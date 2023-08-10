@@ -22,12 +22,8 @@ from retrying import retry
 import sys
 import urllib.parse
 
-
 sys.path.append(os.path.dirname(sys.path[0]))
 config_file = os.path.abspath(__file__).split("/my_project")[0] + "/config.ini"
-
-
-
 
 import socket
 
@@ -94,13 +90,13 @@ def cronJob():
     # # 创建一个 BoatPhoto 对象
     # boat_photo = BoatPhoto()
     # # 创建一个线程，异步执行方法
-    # get_all_boat_thread = threading.Thread(target=boat_photo.get_all_boat)
-    # get_all_boat_thread.start()
-    # #
+    get_all_boat_thread = threading.Thread(target=BoatPhoto.get_all_boat)
+    get_all_boat_thread.start()
     #
-    scheduler = BlockingScheduler()
-    scheduler.add_job(BoatPhoto.get_all_boat, 'interval', seconds=300, id='get_photo')
-    scheduler.start()
+    #
+    # scheduler = BlockingScheduler()
+    # scheduler.add_job(BoatPhoto.get_all_boat, 'interval', seconds=300, id='get_photo')
+    # scheduler.start()
 
     # # 在主线程中注册信号处理函数
     # signal.signal(signal.SIGINT, signal_handler)
@@ -112,9 +108,6 @@ def cronJob():
     # # 启动定时任务调度器
     # scheduler.remove_job('get_all_boat')
     # scheduler.start()
-
-#启动定时任务
-cronJob()
 
 
 init_app()
@@ -211,5 +204,6 @@ def set_card_template():
 
 
 if __name__ == '__main__':
+    cronJob()
     # 启动 API 服务
     api.run(port=8888, host='0.0.0.0',debug=False)
