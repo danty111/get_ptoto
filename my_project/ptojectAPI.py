@@ -789,7 +789,8 @@ class BoatPhoto:
     scheduler = BlockingScheduler()
     get_all_boat_thread = None
 
-    def get_all_boat(self):
+    @staticmethod
+    def get_all_boat():
         print("开始执行船只图片任务")
 
         # 加载静态数据
