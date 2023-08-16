@@ -791,84 +791,70 @@ class BoatPhoto:
 
     @staticmethod
     def get_all_boat():
-        print("开始执行船只图片任务")
+        while True:
+            try:
+                print("开始执行船只图片任务")
 
-        # 加载静态数据
-        boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
-        ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
-        boat_response = requests.get(ship_hardpoints)
-        json_data = boat_response.content.decode('utf-8-sig')
-        boat_weapon_list = json.loads(json_data)
+                # 加载静态数据
+                boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+                ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+                boat_response = requests.get(ship_hardpoints)
+                json_data = boat_response.content.decode('utf-8-sig')
+                boat_weapon_list = json.loads(json_data)
 
-        data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+                data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
 
-        boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list, "data_version": data_version}
+                boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list, "data_version": data_version}
 
-        try:
-            # 读取配置文件
-            config = json.loads(IniFileEditor().read_ini_file())
+                try:
+                    # 读取配置文件
+                    config = json.loads(IniFileEditor().read_ini_file())
 
-            # 获取船只名称列表
-            name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
-            print(f"共需执行{len(name_list)}个数据")
+                    # 获取船只名称列表
+                    name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
+                    print(f"共需执行{len(name_list)}个数据")
 
-            # 打乱列表顺序
-            random.shuffle(name_list)
+                    # 打乱列表顺序
+                    random.shuffle(name_list)
 
-            # 将列表随机分成 10 份
-            num_threads = 10
-            chunk_size = len(name_list) // num_threads
-            chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+                    # 将列表随机分成 10 份
+                    num_threads = 10
+                    chunk_size = len(name_list) // num_threads
+                    chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
 
-            if len(name_list) % num_threads != 0:
-                chunks[-1] += name_list[-(len(name_list) % num_threads):]
+                    if len(name_list) % num_threads != 0:
+                        chunks[-1] += name_list[-(len(name_list) % num_threads):]
 
-            # 线程任务函数
-            def process_names(names):
-                for name in names:
-                    try:
-                        image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
+                    # 线程任务函数
+                    def process_names(names):
+                        for name in names:
+                            try:
+                                image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
 
-                        # 加锁保存文件
-                        with lock:
-                            save_path = config['boat']['boat_name_excel'].split("boat")[
-                                            0] + "storage_boat/" + image_name + ".jpeg"
-                            common_method.pic_compress(image_file, save_path)
+                                # 加锁保存文件
+                                with lock:
+                                    save_path = config['boat']['boat_name_excel'].split("boat")[
+                                                    0] + "storage_boat/" + image_name + ".jpeg"
+                                    common_method.pic_compress(image_file, save_path)
 
-                        print(name, "--成功存储")
+                                print(name, "--成功存储")
 
-                    except Exception as e:
-                        print(f"存储 {name} 时出错:{e}")
+                            except Exception as e:
+                                print(f"存储 {name} 时出错:{e}")
 
-                    # 加间隔
-                    time.sleep(random.uniform(0.5, 1))
+                            # 加间隔
+                            time.sleep(random.uniform(0.5, 1))
 
-            # 使用线程池
-            with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-                futures = [executor.submit(process_names, chunk) for chunk in chunks]
+                    # 使用线程池
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+                        futures = [executor.submit(process_names, chunk) for chunk in chunks]
 
-                # 等待所有线程结束
-                concurrent.futures.wait(futures)
+                        # 等待所有线程结束
+                        concurrent.futures.wait(futures)
 
-            print("本次所有数据执行完毕")
+                    print("本次所有数据执行完毕")
 
-        except Exception as e:
-            print("获取图片错误", e)
-
-
-    def run_scheduler(self):
-
-        self.scheduler.add_job(self.get_all_boat, 'interval', seconds=5, id='get_photo', max_instances=1)
-        self.scheduler.start()
-
-        print("调度器已启动")
-
-    def run_threaded(self):
-
-        if self.get_all_boat_thread and self.get_all_boat_thread.is_alive():
-            self.get_all_boat_thread.join()
-
-        self.get_all_boat_thread = threading.Thread(target=self.get_all_boat)
-        self.get_all_boat_thread.start()
-
-        print("线程已启动")
+                except Exception as e:
+                    print("获取图片错误", e)
+            except:
+                continue
