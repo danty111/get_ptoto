@@ -782,12 +782,9 @@ class GetValue():
         return boat_value_dict
 
 
-lock = threading.Lock()
 
-
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 class BoatPhoto:
-    scheduler = BlockingScheduler()
-    get_all_boat_thread = None
 
     @staticmethod
     def get_all_boat():
@@ -795,15 +792,18 @@ class BoatPhoto:
             print("开始执行船只图片任务")
 
             # 加载静态数据
-            boat_json = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+            boat_json = json.loads(
+                Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
             ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
             boat_response = requests.get(ship_hardpoints)
             json_data = boat_response.content.decode('utf-8-sig')
             boat_weapon_list = json.loads(json_data)
 
-            data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+            data_version = Request.get_html_encode(
+                "https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
 
-            boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list, "data_version": data_version}
+            boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list,
+                          "data_version": data_version}
 
             try:
                 # 读取配置文件
@@ -830,11 +830,9 @@ class BoatPhoto:
                         try:
                             image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
 
-                            # 加锁保存文件
-                            with lock:
-                                save_path = config['boat']['boat_name_excel'].split("boat")[
-                                                0] + "storage_boat/" + image_name + ".jpeg"
-                                common_method.pic_compress(image_file, save_path)
+                            save_path = config['boat']['boat_name_excel'].split("boat")[
+                                            0] + "storage_boat/" + image_name + ".jpeg"
+                            common_method.pic_compress(image_file, save_path)
 
                             print(name, "--成功存储")
 
@@ -844,13 +842,8 @@ class BoatPhoto:
                         # 加间隔
                         time.sleep(random.uniform(0.5, 1))
 
-                # 使用线程池
-                with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-                    futures = [executor.submit(process_names, chunk) for chunk in chunks]
-
-                    # 等待所有线程结束
-                    concurrent.futures.wait(futures)
-
+                futures = [executor.submit(process_names, chunk) for chunk in chunks]
+                concurrent.futures.wait(futures)
                 print("本次所有数据执行完毕")
 
             except Exception as e:
