@@ -8,7 +8,6 @@ import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
-
 import requests
 from PIL import Image
 from PIL.Image import Quantize
@@ -16,6 +15,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from lxml import etree
 
 from common import IniFileEditor, MakePhotos, Request, common_method, GetExcelValue
+
 
 class MakePhoto:
     def __init__(self, interface, name):
@@ -38,7 +38,8 @@ class MakePhoto:
             else:
                 random_number = str(random_number)
 
-            self.back_ground_image = Image.open(self.config[interface]["background"].replace(".png", f"_{random_number}.png"))
+            self.back_ground_image = Image.open(
+                self.config[interface]["background"].replace(".png", f"_{random_number}.png"))
 
         self.template_image = Image.open(self.template_image_name)
         self.name = name
@@ -110,7 +111,6 @@ class MakePhoto:
 
     def make_boat(self, boat_value=None):
 
-
         if self.template_image_name != self.parameter_dic["template_path"] or self.section["need_change"] != "false":
             get_value = MakePhotos(self.template_image).recognize_text(self.section["ttf_path"],
                                                                        self.section["font_size"]
@@ -125,7 +125,7 @@ class MakePhoto:
             # 将判断改变字段回填false
             IniFileEditor().set_value("boat", "need_change", "false")
         # 获取舰船名称
-        msg = GetValue(self.name).get_boat(self.config[self.interface]["boat_name_excel"],boat_value=boat_value)
+        msg = GetValue(self.name).get_boat(self.config[self.interface]["boat_name_excel"], boat_value=boat_value)
         self.back_ground_image = MakePhotos(self.back_ground_image) \
             .photo_to_photo(msg["boat_image"], self.template["boat_image_size"],
                             self.template["boat_image_coordinate"], hierarchy="upper")
@@ -276,8 +276,6 @@ class GetValue():
         else:
             data_version = boat_value["data_version"]
 
-
-
         for boat_data in res1:
             if self.add_name.lower() == boat_data["ClassName"].lower():
                 res1 = boat_data
@@ -405,7 +403,8 @@ class GetValue():
 
         # 标准速度
         try:
-            standard_speed = _element.xpath('//*[text() = "Scm speed"]/following-sibling::*//*[@class="smwtext"]/text()')[0]
+            standard_speed = \
+            _element.xpath('//*[text() = "Scm speed"]/following-sibling::*//*[@class="smwtext"]/text()')[0]
             s_speed = boat_value_dict["standard_speed"] = standard_speed.encode('utf-8').decode('utf-8')
             match = re.search(r'(\d+(\.\d+)?)\s*(\w+/\w+)', s_speed)
 
@@ -601,8 +600,8 @@ class GetValue():
         try:
             # 自毁时间
             self_destruct_time = \
-            boat_weapon['Hardpoints']['Components']['Avionics']['SelfDestruct']['InstalledItems'][0][
-                'SelfDestructionType']
+                boat_weapon['Hardpoints']['Components']['Avionics']['SelfDestruct']['InstalledItems'][0][
+                    'SelfDestructionType']
             self_destruct_time = self_destruct_time.split('_')[-1]
             boat_value_dict["self_destruct_time"] = self_destruct_time
         except:
@@ -782,8 +781,9 @@ class GetValue():
         return boat_value_dict
 
 
-
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+
+
 class BoatPhoto:
 
     @staticmethod
@@ -848,3 +848,4 @@ class BoatPhoto:
 
             except Exception as e:
                 print("获取图片错误", e)
+                continue
