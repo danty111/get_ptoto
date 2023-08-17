@@ -404,7 +404,7 @@ class GetValue():
         # 标准速度
         try:
             standard_speed = \
-            _element.xpath('//*[text() = "Scm speed"]/following-sibling::*//*[@class="smwtext"]/text()')[0]
+                _element.xpath('//*[text() = "Scm speed"]/following-sibling::*//*[@class="smwtext"]/text()')[0]
             s_speed = boat_value_dict["standard_speed"] = standard_speed.encode('utf-8').decode('utf-8')
             match = re.search(r'(\d+(\.\d+)?)\s*(\w+/\w+)', s_speed)
 
@@ -789,23 +789,23 @@ class BoatPhoto:
     @staticmethod
     def get_all_boat():
         while True:
-            print("开始执行船只图片任务")
-
-            # 加载静态数据
-            boat_json = json.loads(
-                Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
-            ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
-            boat_response = requests.get(ship_hardpoints)
-            json_data = boat_response.content.decode('utf-8-sig')
-            boat_weapon_list = json.loads(json_data)
-
-            data_version = Request.get_html_encode(
-                "https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
-
-            boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list,
-                          "data_version": data_version}
-
             try:
+                print("开始执行船只图片任务")
+
+                # 加载静态数据
+                boat_json = json.loads(
+                    Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+                ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+                boat_response = requests.get(ship_hardpoints)
+                json_data = boat_response.content.decode('utf-8-sig')
+                boat_weapon_list = json.loads(json_data)
+
+                data_version = Request.get_html_encode(
+                    "https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+
+                boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list,
+                              "data_version": data_version}
+
                 # 读取配置文件
                 config = json.loads(IniFileEditor().read_ini_file())
 
