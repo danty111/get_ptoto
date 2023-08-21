@@ -811,6 +811,7 @@ class BoatPhoto:
 
                 # 获取船只名称列表
                 name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
+                name_list = name_list[:len(name_list)//2]
                 print(f"共需执行{len(name_list)}个数据")
 
                 # 打乱列表顺序
@@ -838,9 +839,6 @@ class BoatPhoto:
 
                         except Exception as e:
                             print(f"存储 {name} 时出错:{e}")
-
-                        # 加间隔
-                        time.sleep(random.uniform(0.5, 1))
 
                 futures = [executor.submit(process_names, chunk) for chunk in chunks]
                 concurrent.futures.wait(futures)
