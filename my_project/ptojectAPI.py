@@ -811,14 +811,13 @@ class BoatPhoto:
 
                 # 获取船只名称列表
                 name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
-                name_list = name_list[:len(name_list)//2]
                 print(f"共需执行{len(name_list)}个数据")
 
                 # 打乱列表顺序
                 random.shuffle(name_list)
 
                 # 将列表随机分成 10 份
-                num_threads = 10
+                num_threads = 5
                 chunk_size = len(name_list) // num_threads
                 chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
 
