@@ -2,6 +2,7 @@
 # encoding:utf-8
 import asyncio
 import concurrent.futures
+import multiprocessing
 import os
 import profile
 import signal
@@ -83,31 +84,13 @@ def init_app():
         config.write(configfile)
 
 
-def signal_handler(signum, frame):
-    print(f"Received signal {signum}, stopping server gracefully")
+
 
 def cronJob():
-    # # 创建一个 BoatPhoto 对象
-    # boat_photo = BoatPhoto()
-    # # 创建一个线程，异步执行方法
-    get_all_boat_thread = threading.Thread(target=BoatPhoto.get_all_boat)
-    get_all_boat_thread.start()
-    #
-    #
-    # scheduler = BlockingScheduler()
-    # scheduler.add_job(BoatPhoto.get_all_boat, 'interval', seconds=300, id='get_photo')
-    # scheduler.start()
-
-    # # 在主线程中注册信号处理函数
-    # signal.signal(signal.SIGINT, signal_handler)
-    # scheduler = BackgroundScheduler()
-    # # 定义一个任务，每个小时执行一次
-    # scheduler.add_job(BoatPhoto.get_all_boat,'interval',  args = [scheduler],minutes=5, replace_existing=False, id='get_all_boat')
-
-    # print("启动定时任务")
-    # # 启动定时任务调度器
-    # scheduler.remove_job('get_all_boat')
-    # scheduler.start()
+    # 创建一个线程，异步执行方法
+    p = multiprocessing.Process(target=BoatPhoto.get_all_boat)
+    p.daemon = True
+    p.start()
 
 
 init_app()

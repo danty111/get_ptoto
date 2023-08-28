@@ -788,6 +788,15 @@ class BoatPhoto:
 
     @staticmethod
     def get_all_boat():
+        # 读取配置文件
+        config = json.loads(IniFileEditor().read_ini_file())
+
+        # 获取船只名称列表
+        name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
+        print(f"共需执行{len(name_list)}个数据")
+
+        # 打乱列表顺序
+        random.shuffle(name_list)
         while True:
             try:
                 print("开始执行船只图片任务")
@@ -806,41 +815,44 @@ class BoatPhoto:
                 boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list,
                               "data_version": data_version}
 
-                # 读取配置文件
-                config = json.loads(IniFileEditor().read_ini_file())
 
-                # 获取船只名称列表
-                name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
-                print(f"共需执行{len(name_list)}个数据")
+                for name in name_list:
+                    try:
+                        image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
 
-                # 打乱列表顺序
-                random.shuffle(name_list)
+                        save_path = config['boat']['boat_name_excel'].split("boat")[
+                                        0] + "storage_boat/" + image_name + ".jpeg"
+                        common_method.pic_compress(image_file, save_path)
 
-                # 将列表随机分成 10 份
-                num_threads = 5
-                chunk_size = len(name_list) // num_threads
-                chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+                        print(name, "--成功存储")
 
-                if len(name_list) % num_threads != 0:
-                    chunks[-1] += name_list[-(len(name_list) % num_threads):]
-
-                # 线程任务函数
-                def process_names(names):
-                    for name in names:
-                        try:
-                            image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
-
-                            save_path = config['boat']['boat_name_excel'].split("boat")[
-                                            0] + "storage_boat/" + image_name + ".jpeg"
-                            common_method.pic_compress(image_file, save_path)
-
-                            print(name, "--成功存储")
-
-                        except Exception as e:
-                            print(f"存储 {name} 时出错:{e}")
-
-                futures = [executor.submit(process_names, chunk) for chunk in chunks]
-                concurrent.futures.wait(futures)
+                    except Exception as e:
+                        print(f"存储 {name} 时出错:{e}")
+                # # 将列表随机分成 10 份
+                # num_threads = 5
+                # chunk_size = len(name_list) // num_threads
+                # chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+                #
+                # if len(name_list) % num_threads != 0:
+                #     chunks[-1] += name_list[-(len(name_list) % num_threads):]
+                #
+                # # 线程任务函数
+                # def process_names(names):
+                #     for name in names:
+                #         try:
+                #             image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
+                #
+                #             save_path = config['boat']['boat_name_excel'].split("boat")[
+                #                             0] + "storage_boat/" + image_name + ".jpeg"
+                #             common_method.pic_compress(image_file, save_path)
+                #
+                #             print(name, "--成功存储")
+                #
+                #         except Exception as e:
+                #             print(f"存储 {name} 时出错:{e}")
+                #
+                # futures = [executor.submit(process_names, chunk) for chunk in chunks]
+                # concurrent.futures.wait(futures)
                 print("本次所有数据执行完毕")
 
             except Exception as e:
