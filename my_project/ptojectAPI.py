@@ -15,6 +15,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from lxml import etree
 
 from common import IniFileEditor, MakePhotos, Request, common_method, GetExcelValue
+from main import api
 
 
 class MakePhoto:
@@ -790,16 +791,18 @@ class BoatPhoto:
     def get_all_boat():
         # 读取配置文件
         config = json.loads(IniFileEditor().read_ini_file())
-
+        logger = api.logger
         # 获取船只名称列表
         name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
         print(f"共需执行{len(name_list)}个数据")
 
         # 打乱列表顺序
         random.shuffle(name_list)
+        num = 0
         while True:
             try:
-                print("开始执行船只图片任务")
+                num += 1
+                logger.info(f"开始执行第{num}轮,船只图片任务")
 
                 # 加载静态数据
                 boat_json = json.loads(
@@ -817,6 +820,8 @@ class BoatPhoto:
 
 
                 for name in name_list:
+                    current_time = time.localtime()
+                    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", current_time)
                     try:
                         image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
 
@@ -824,10 +829,10 @@ class BoatPhoto:
                                         0] + "storage_boat/" + image_name + ".jpeg"
                         common_method.pic_compress(image_file, save_path)
 
-                        print(name, "--成功存储")
+                        logger.info(f"当前时间{formatted_time}第{num}轮 ",name, "--成功存储")
 
                     except Exception as e:
-                        print(f"存储 {name} 时出错:{e}")
+                        logger.error(f"当前时间{formatted_time}第{num}轮 存储 {name} 时出错:{e}")
                 # # 将列表随机分成 10 份
                 # num_threads = 5
                 # chunk_size = len(name_list) // num_threads
@@ -853,8 +858,8 @@ class BoatPhoto:
                 #
                 # futures = [executor.submit(process_names, chunk) for chunk in chunks]
                 # concurrent.futures.wait(futures)
-                print("本次所有数据执行完毕")
+                logger.info("本次所有数据执行完毕")
 
             except Exception as e:
-                print("获取图片错误", e)
+                logger.error("获取图片错误", e)
                 continue
