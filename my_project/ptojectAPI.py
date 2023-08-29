@@ -7,7 +7,6 @@ import threading
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-
 import requests
 from PIL import Image
 from PIL.Image import Quantize
@@ -15,9 +14,11 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from lxml import etree
 
 from common import IniFileEditor, MakePhotos, Request, common_method, GetExcelValue
-from main import api
 
+import logging
 
+logger = logging.getLogger('api') # 使用与flask中同名的logger
+logger.info('log something')
 class MakePhoto:
     def __init__(self, interface, name):
         self.config = json.loads(IniFileEditor().read_ini_file())
@@ -791,10 +792,9 @@ class BoatPhoto:
     def get_all_boat():
         # 读取配置文件
         config = json.loads(IniFileEditor().read_ini_file())
-        logger = api.logger
         # 获取船只名称列表
         name_list = GetExcelValue.get_boat_list(config["boat"]["boat_name_excel"])
-        print(f"共需执行{len(name_list)}个数据")
+        logger.info(f"共需执行{len(name_list)}个数据")
 
         # 打乱列表顺序
         random.shuffle(name_list)

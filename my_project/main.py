@@ -17,7 +17,7 @@ from PIL import Image
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
 from flask import jsonify, abort, request, make_response
-from common import IniFileEditor, MakePhotos, GetExcelValue, common_method
+from common import IniFileEditor, GetExcelValue, common_method
 from ptojectAPI import MakePhoto, GetValue,BoatPhoto
 from retrying import retry
 import sys
