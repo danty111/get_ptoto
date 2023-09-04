@@ -97,7 +97,7 @@ def cronJob():
             p.daemon = False
             p.start()
             p.join()  # 等待进程完成
-            time.sleep(190)  # 等待一段时间后重新启动进程
+            time.sleep(150)  # 等待一段时间后重新启动进程
         except:
             continue
 
