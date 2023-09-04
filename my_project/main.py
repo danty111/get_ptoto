@@ -8,7 +8,7 @@ import profile
 import signal
 import subprocess
 import threading
-from datetime import time
+import time
 from io import BytesIO
 import logging
 from logging.handlers import RotatingFileHandler
@@ -87,8 +87,7 @@ def init_app():
 
 
 def cronJob():
-    # 创建一个线程，异步执行方法
-    p = multiprocessing.Process(target=BoatPhoto.get_all_boat)
+    p = multiprocessing.Process(target=BoatPhoto().get_all_boat)
     p.daemon = True
     p.start()
 
