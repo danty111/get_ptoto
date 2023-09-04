@@ -87,9 +87,19 @@ def init_app():
 
 
 def cronJob():
-    p = multiprocessing.Process(target=BoatPhoto().get_all_boat)
-    p.daemon = True
-    p.start()
+    # p = multiprocessing.Process(target=BoatPhoto().get_all_boat)
+    # p.daemon = False
+    # p.start()
+
+    while True:
+        try:
+            p = multiprocessing.Process(target=BoatPhoto().get_all_boat)
+            p.daemon = False
+            p.start()
+            p.join()  # 等待进程完成
+            time.sleep(190)  # 等待一段时间后重新启动进程
+        except:
+            continue
 
 
 init_app()
@@ -186,6 +196,8 @@ def set_card_template():
 
 
 if __name__ == '__main__':
-    cronJob()
+    monitor_thread = threading.Thread(target=cronJob)
+    monitor_thread.daemon = True  # 将监控线程设置为守护线程
+    monitor_thread.start()
     # 启动 API 服务
     api.run(port=8888, host='0.0.0.0',debug=False)
