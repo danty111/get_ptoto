@@ -92,22 +92,19 @@ def cronJob():
     # p.start()
 
     processes = []
-
-    while True:
-        try:
-            p = multiprocessing.Process(target=BoatPhoto().get_all_boat)
-            p.daemon = False
-            p.start()
-            p.join()  # 等待进程完成
-            time.sleep(150)  # 等待一段时间后重新启动进程
-        except:
-            for process in processes:
-                if process.is_alive():
-                    process.terminate()
-            continue
-        finally:
-            processes.append(p)
-
+    try:
+        p = multiprocessing.Process(target=BoatPhoto().get_all_boat)
+        p.daemon = False
+        p.start()
+        p.join()  # 等待进程完成
+        time.sleep(150)  # 等待一段时间后重新启动进程
+    except:
+        for process in processes:
+            if process.is_alive():
+                process.terminate()
+    finally:
+        processes.append(p)
+        cronJob()
 
 init_app()
 
