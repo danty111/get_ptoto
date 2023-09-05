@@ -259,13 +259,13 @@ class GetValue():
         self.name = name_list[0]
         self.add_name = name_list[2]
 
-        if boat_value["boat_json"] == "":
-            res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+        if boat_value == {} or boat_value["boat_json"] == "" or "boat_json" not in boat_value:
+            res1  = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
         else:
             res1 = boat_value["boat_json"]
         res2 = Request.get_html_encode(f"https://starcitizen.tools/{self.name}")
 
-        if boat_value["ship_hardpoints"] == "":
+        if boat_value == {} or boat_value["ship_hardpoints"] == "" :
             ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
             boat_response = requests.get(ship_hardpoints)
             json_data = boat_response.content.decode('utf-8-sig')
@@ -273,7 +273,7 @@ class GetValue():
         else:
             boat_weapon_list = boat_value["ship_hardpoints"]
 
-        if boat_value["data_version"] == "":
+        if boat_value == {} or boat_value["data_version"] == "":
             data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
         else:
             data_version = boat_value["data_version"]

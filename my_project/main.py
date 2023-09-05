@@ -91,6 +91,8 @@ def cronJob():
     # p.daemon = False
     # p.start()
 
+    processes = []
+
     while True:
         try:
             p = multiprocessing.Process(target=BoatPhoto().get_all_boat)
@@ -99,7 +101,12 @@ def cronJob():
             p.join()  # 等待进程完成
             time.sleep(150)  # 等待一段时间后重新启动进程
         except:
+            for process in processes:
+                if process.is_alive():
+                    process.terminate()
             continue
+        finally:
+            processes.append(p)
 
 
 init_app()
@@ -200,4 +207,5 @@ if __name__ == '__main__':
     monitor_thread.daemon = True  # 将监控线程设置为守护线程
     monitor_thread.start()
     # 启动 API 服务
+    # MakePhoto("boat", "术士").make_boat()[0]
     api.run(port=8888, host='0.0.0.0',debug=False)
