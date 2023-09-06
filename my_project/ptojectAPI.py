@@ -796,75 +796,76 @@ class BoatPhoto:
 
         # 打乱列表顺序
         random.shuffle(name_list)
-        num = 0
-        while True:
-            try:
-                num += 1
-                logger.info(f"开始执行第{num}轮,船只图片任务")
+        # num = 0
+        # while True:
+        #     try:
+        #         num += 1
+        #         logger.info(f"开始执行第{num}轮,船只图片任务")
 
-                # 加载静态数据
-                boat_json = json.loads(
-                    Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
-                ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
-                boat_response = requests.get(ship_hardpoints)
-                json_data = boat_response.content.decode('utf-8-sig')
-                boat_weapon_list = json.loads(json_data)
+        # 加载静态数据
+        boat_json = json.loads(
+            Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+        ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+        boat_response = requests.get(ship_hardpoints)
+        json_data = boat_response.content.decode('utf-8-sig')
+        boat_weapon_list = json.loads(json_data)
 
-                data_version = Request.get_html_encode(
-                    "https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+        data_version = Request.get_html_encode(
+            "https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
 
-                boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list,
-                              "data_version": data_version}
+        boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list,
+                      "data_version": data_version}
 
-                # for name in name_list:
-                #     current_time = time.localtime()
-                #     formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", current_time)
-                #     try:
-                #         image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
-                #
-                #         save_path = config['boat']['boat_name_excel'].split("boat")[
-                #                         0] + "storage_boat/" + image_name + ".jpeg"
-                #         common_method.pic_compress(image_file, save_path)
-                #
-                #         logger.info(f"当前时间{formatted_time}第{num}轮 ",name, "--成功存储")
-                #
-                #     except Exception as e:
-                #         logger.error(f"当前时间{formatted_time}第{num}轮 存储 {name} 时出错:{e}")
-                # 将列表随机分成 10 份
-                num_threads = 5
-                chunk_size = len(name_list) // num_threads
-                chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
+        # for name in name_list:
+        #     current_time = time.localtime()
+        #     formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", current_time)
+        #     try:
+        #         image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
+        #
+        #         save_path = config['boat']['boat_name_excel'].split("boat")[
+        #                         0] + "storage_boat/" + image_name + ".jpeg"
+        #         common_method.pic_compress(image_file, save_path)
+        #
+        #         logger.info(f"当前时间{formatted_time}第{num}轮 ",name, "--成功存储")
+        #
+        #     except Exception as e:
+        #         logger.error(f"当前时间{formatted_time}第{num}轮 存储 {name} 时出错:{e}")
+        # 将列表随机分成 10 份
+        num_threads = 5
+        chunk_size = len(name_list) // num_threads
+        chunks = [name_list[i:i + chunk_size] for i in range(0, len(name_list), chunk_size)]
 
-                if len(name_list) % num_threads != 0:
-                    chunks[-1] += name_list[-(len(name_list) % num_threads):]
+        if len(name_list) % num_threads != 0:
+            chunks[-1] += name_list[-(len(name_list) % num_threads):]
 
-                # 线程任务函数
-                def process_names(names):
-                    for name in names:
-                        try:
-                            image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
+        # 线程任务函数
+        def process_names(names):
+            for name in names:
+                try:
+                    image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
 
-                            save_path = config['boat']['boat_name_excel'].split("boat")[
-                                            0] + "storage_boat/" + image_name + ".jpeg"
-                            common_method.pic_compress(image_file, save_path)
+                    save_path = config['boat']['boat_name_excel'].split("boat")[
+                                    0] + "storage_boat/" + image_name + ".jpeg"
+                    common_method.pic_compress(image_file, save_path)
 
-                            print(name, "--成功存储")
+                    print(name, "--成功存储")
 
-                        except Exception as e:
-                            print(f"存储 {name} 时出错:{e}")
+                except Exception as e:
+                    print(f"存储 {name} 时出错:{e}")
 
-                futures = [executor.submit(process_names, chunk) for chunk in chunks]
-                concurrent.futures.wait(futures)
-                logger.info("本次所有数据执行完毕")
+        futures = [executor.submit(process_names, chunk) for chunk in chunks]
+        concurrent.futures.wait(futures)
+        logger.info("本次所有数据执行完毕")
+        raise Exception("报错让Supervisor重启")
 
-            except Exception as e:
-                logger.error("获取图片错误", e)
-                continue
+            # except Exception as e:
+            #     logger.error("获取图片错误", e)
+            #     continue
 
-
-    def get_all_boat(self):
-        while True:
-            try:
-                self.carry_out_boat()
-            except:
-                continue
+    #
+    # def get_all_boat(self):
+    #     while True:
+    #         try:
+    #             self.carry_out_boat()
+    #         except:
+    #             continue

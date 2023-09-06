@@ -4,8 +4,6 @@ from datetime import time
 from ptojectAPI import BoatPhoto
 
 
-def run_boat_task():
+def cronJob():
     BoatPhoto().carry_out_boat()
-
-if __name__ == '__main__':
-    run_boat_task()
+cronJob()
