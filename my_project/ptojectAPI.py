@@ -788,6 +788,9 @@ executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
 class BoatPhoto:
     def carry_out_boat(self):
+        import concurrent.futures
+        import random
+
         # 读取配置文件
         config = json.loads(IniFileEditor().read_ini_file())
         # 获取船只名称列表
@@ -827,12 +830,19 @@ class BoatPhoto:
 
         # 创建线程池
         num_threads = 5
-        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-            # 提交任务给线程池
-            futures = [executor.submit(process_names, name) for name in name_list]
 
-            # 等待所有任务完成
-            concurrent.futures.wait(futures)
+        while True:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+                # 提交任务给线程池
+                futures = [executor.submit(process_names, name) for name in name_list]
+
+                # 等待所有任务完成
+                concurrent.futures.wait(futures)
+
+            # 在每次循环结束后随机打乱列表顺序
+            random.shuffle(name_list)
+
+            # 可以添加适当的休眠时间，以控制每次循环的间隔
 
         logger.info("本次所有数据执行完毕")
 
