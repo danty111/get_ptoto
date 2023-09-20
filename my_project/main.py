@@ -147,6 +147,8 @@ def boat():
 @retry(stop_max_attempt_number=3, wait_fixed=300)
 def boat_real_time():
     try:
+        name = request.args.get('name')
+        name = urllib.parse.unquote(name)
         image = Image.open(os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/renewal_pic/img.png")
     except Exception as e:
         return abort(400, description=str(e))
@@ -170,8 +172,10 @@ def boat_real_time():
     # # 将图像作为响应内容返回
     # response = make_response(buffer.getvalue())
     # response.headers["Content-Type"] = "image/png"
-    get_all_boat_thread = threading.Thread(target=BoatPhoto().get_all_boat)
-    get_all_boat_thread.start()
+    if name == "更新数据":
+        get_all_boat_thread = threading.Thread(target=BoatPhoto().get_all_boat)
+        get_all_boat_thread.start()
+        logging.info("启动船只更新")
     return response
 
 
