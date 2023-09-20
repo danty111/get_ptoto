@@ -170,7 +170,8 @@ def boat_real_time():
     # # 将图像作为响应内容返回
     # response = make_response(buffer.getvalue())
     # response.headers["Content-Type"] = "image/png"
-    BoatPhoto().carry_out_boat()
+    get_all_boat_thread = threading.Thread(target=BoatPhoto().get_all_boat)
+    get_all_boat_thread.start()
     return response
 
 
@@ -196,4 +197,5 @@ if __name__ == '__main__':
 
     # 启动 API 服务
     # MakePhoto("boat", "术士").make_boat()[0]
+
     api.run(port=8888, host='0.0.0.0',debug=False)
