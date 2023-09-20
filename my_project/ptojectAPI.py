@@ -601,10 +601,13 @@ class GetValue():
             boat_value_dict["computer"] = "-"
         try:
             # 自毁时间
-            self_destruct_time = \
-                boat_weapon['Hardpoints']['Components']['Avionics']['SelfDestruct']['InstalledItems'][0][
-                    'SelfDestructionType']
-            self_destruct_time = self_destruct_time.split('_')[-1]
+            self_destruct_time =_element.xpath('//*[text() = " Self destruct"]/following-sibling::*//*[@class="template-component__title"]//text()')[0]
+                # boat_weapon['Hardpoints']['Components']['Avionics']['SelfDestruct']['InstalledItems'][0][
+                #     'SelfDestructionType']
+
+            self_destruct_time = re.search(r'\((\d+s)\)', self_destruct_time)
+            if self_destruct_time:
+                self_destruct_time = self_destruct_time.group(1)
             boat_value_dict["self_destruct_time"] = self_destruct_time
         except:
             boat_value_dict["self_destruct_time"] = "-"

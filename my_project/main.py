@@ -147,19 +147,30 @@ def boat():
 @retry(stop_max_attempt_number=3, wait_fixed=300)
 def boat_real_time():
     try:
-        name = request.args.get('name')
-        name = urllib.parse.unquote(name)
-        image = MakePhoto("boat",name).make_boat()[0]
+        image = Image.open(os.path.abspath(__file__).split("/main.py")[0]+"/my_html/templates/renewal_pic/img.png")
     except Exception as e:
         return abort(400, description=str(e))
-
     buffer = BytesIO()
-    image.convert('RGBA').save(buffer, format="PNG")
+    image.convert('RGB').save(buffer, format="jpeg")
     buffer.seek(0)
-
     # 将图像作为响应内容返回
     response = make_response(buffer.getvalue())
     response.headers["Content-Type"] = "image/png"
+    # try:
+    #     name = request.args.get('name')
+    #     name = urllib.parse.unquote(name)
+    #     image = MakePhoto("boat",name).make_boat()[0]
+    # except Exception as e:
+    #     return abort(400, description=str(e))
+    #
+    # buffer = BytesIO()
+    # image.convert('RGBA').save(buffer, format="PNG")
+    # buffer.seek(0)
+    #
+    # # 将图像作为响应内容返回
+    # response = make_response(buffer.getvalue())
+    # response.headers["Content-Type"] = "image/png"
+    BoatPhoto().carry_out_boat()
     return response
 
 
