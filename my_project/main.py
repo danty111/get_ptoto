@@ -89,7 +89,7 @@ def init_app():
 
 
 init_app()
-
+boat_photo = BoatPhoto()
 api = flask.Flask(__name__)
 api.debug = True
 
@@ -200,6 +200,5 @@ def set_card_template():
 if __name__ == '__main__':
 
     # 启动 API 服务
-    # MakePhoto("boat", "术士").make_boat()[0]
 
     api.run(port=8888, host='0.0.0.0',debug=False)

@@ -488,14 +488,17 @@ class GetValue():
         shield_value = res1['Weapons']['TotalShieldHP']
         boat_value_dict["shield_value"] = common_method.decimal_de_zeroing(shield_value) + " HP"
         # 机体血量
-        body_blood_volume = 0
-        for i in res1["Hull"]["DamageBeforeDestruction"].values():
-            body_blood_volume += i
-        for i in res1["Hull"]["DamageBeforeDetach"].values():
-            body_blood_volume += i
-        boat_value_dict["body_blood_volume"] = common_method.decimal_de_zeroing(body_blood_volume) + " HP"
+        try:
+            body_blood_volume = 0
+            for i in res1["Hull"]['SecondaryParts'].values():
+                body_blood_volume += i
+            for i in res1["Hull"]['SubParts'].values():
+                body_blood_volume += i
+            boat_value_dict["body_blood_volume"] = common_method.decimal_de_zeroing(body_blood_volume) + " HP"
+        except:
+            boat_value_dict["body_blood_volume"] = "-"
         # 机头\机身
-        Canopy = res1["Hull"]["DamageBeforeDestruction"]
+        Canopy = res1["Hull"]["StructureHealthPoints"]['MainParts']
         if "Nose" in Canopy:
             Canopy = Canopy["Nose"]
         elif "nose" in Canopy:
@@ -504,7 +507,7 @@ class GetValue():
             Canopy = "-"
         Canopy = common_method.decimal_de_zeroing(Canopy)
 
-        Body = res1["Hull"]["DamageBeforeDestruction"]
+        Body = res1["Hull"]["StructureHealthPoints"]['MainParts']
         if "Body" in Body:
             Body = Body['Body']
         elif "body" in Body:
@@ -771,7 +774,7 @@ class GetValue():
             boat_value_dict["multifunctional"] = "-"
         # 飞船图片
         boat_value_dict["boat_image"] = _element.xpath(
-            '//*[@class ="infobox__content mw-collapsible-content"]//*[@class = "mw-file-description"]/img/@src')[0]
+            '//*[@class ="infobox__content mw-collapsible-content"]//*[@class = "mw-file-description"]//img/@src')[0]
 
         # 采集版本
         match = re.search(r',gameversion="([^"]+)"', data_version)
@@ -787,12 +790,12 @@ class GetValue():
 
 
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
-
+import concurrent.futures
+import random
 
 class BoatPhoto:
     def carry_out_boat(self):
-        import concurrent.futures
-        import random
+
 
         # 读取配置文件
         config = json.loads(IniFileEditor().read_ini_file())
@@ -818,6 +821,7 @@ class BoatPhoto:
                       "data_version": data_version}
 
         # 线程任务函数
+
         def process_names(name):
             try:
                 image_file, image_name = MakePhoto("boat", name).make_boat(boat_value)
@@ -851,11 +855,6 @@ class BoatPhoto:
 
 
     def get_all_boat(self):
-        num = 0
         while True:
-            try:
-                self.carry_out_boat()
-            except:
-                continue
-            finally:
-                logger.info(f"第{num}轮执行")
+            self.carry_out_boat()
+            time.sleep(60)
