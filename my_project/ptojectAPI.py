@@ -490,9 +490,9 @@ class GetValue():
         # 机体血量
         try:
             body_blood_volume = 0
-            for i in res1["Hull"]['SecondaryParts'].values():
+            for i in res1["Hull"]['StructureHealthPoints']['SecondaryParts'].values():
                 body_blood_volume += i
-            for i in res1["Hull"]['SubParts'].values():
+            for i in res1["Hull"]["StructureHealthPoints"]['MainParts'].values():
                 body_blood_volume += i
             boat_value_dict["body_blood_volume"] = common_method.decimal_de_zeroing(body_blood_volume) + " HP"
         except:
@@ -504,7 +504,7 @@ class GetValue():
         elif "nose" in Canopy:
             Canopy = Canopy["nose"]
         else:
-            Canopy = "-"
+            Canopy = "无机头数据"
         Canopy = common_method.decimal_de_zeroing(Canopy)
 
         Body = res1["Hull"]["StructureHealthPoints"]['MainParts']
@@ -855,6 +855,11 @@ class BoatPhoto:
 
 
     def get_all_boat(self):
+        num = 0
         while True:
-            self.carry_out_boat()
-            time.sleep(60)
+            try:
+                self.carry_out_boat()
+            except:
+                continue
+            finally:
+                logger.info(f"第{num}轮执行")

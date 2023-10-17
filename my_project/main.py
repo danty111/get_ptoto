@@ -89,7 +89,6 @@ def init_app():
 
 
 init_app()
-boat_photo = BoatPhoto()
 api = flask.Flask(__name__)
 api.debug = True
 
@@ -158,6 +157,13 @@ def boat_real_time():
     # 将图像作为响应内容返回
     response = make_response(buffer.getvalue())
     response.headers["Content-Type"] = "image/png"
+    if name == "更新数据":
+        get_all_boat_thread = threading.Thread(target=BoatPhoto().get_all_boat)
+        get_all_boat_thread.start()
+        logging.info("启动船只更新")
+
+
+
     # try:
     #     name = request.args.get('name')
     #     name = urllib.parse.unquote(name)
@@ -172,10 +178,7 @@ def boat_real_time():
     # # 将图像作为响应内容返回
     # response = make_response(buffer.getvalue())
     # response.headers["Content-Type"] = "image/png"
-    if name == "更新数据":
-        get_all_boat_thread = threading.Thread(target=BoatPhoto().get_all_boat)
-        get_all_boat_thread.start()
-        logging.info("启动船只更新")
+
     return response
 
 
