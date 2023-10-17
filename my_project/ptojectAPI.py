@@ -504,7 +504,7 @@ class GetValue():
         elif "nose" in Canopy:
             Canopy = Canopy["nose"]
         else:
-            Canopy = "无机头数据"
+            Canopy = "-"
         Canopy = common_method.decimal_de_zeroing(Canopy)
 
         Body = res1["Hull"]["StructureHealthPoints"]['MainParts']
