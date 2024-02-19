@@ -161,23 +161,22 @@ def boat_real_time():
         get_all_boat_thread = threading.Thread(target=BoatPhoto().get_all_boat)
         get_all_boat_thread.start()
         logging.info("启动船只更新")
-
-
-
+    #
+    #
     # try:
     #     name = request.args.get('name')
     #     name = urllib.parse.unquote(name)
     #     image = MakePhoto("boat",name).make_boat()[0]
     # except Exception as e:
     #     return abort(400, description=str(e))
-    #
-    # buffer = BytesIO()
-    # image.convert('RGBA').save(buffer, format="PNG")
-    # buffer.seek(0)
-    #
-    # # 将图像作为响应内容返回
-    # response = make_response(buffer.getvalue())
-    # response.headers["Content-Type"] = "image/png"
+
+    buffer = BytesIO()
+    image.convert('RGBA').save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # 将图像作为响应内容返回
+    response = make_response(buffer.getvalue())
+    response.headers["Content-Type"] = "image/png"
 
     return response
 

@@ -25,13 +25,13 @@ class MakePhoto:
         self.interface = interface
         self.template_image_name = self.config[interface]["background"].replace(".png", "_template.png")
         if self.interface == "boat":
-            random_number = random.randint(1, 10)
+            random_number = random.randint(1, 6)
             if random_number < 10:
                 random_number = "0" + str(random_number)
             else:
                 random_number = str(random_number)
             self.back_ground_image = Image.open(
-                self.config[interface]["background"].replace(".png", f"_{random_number}.png"))
+                self.config[interface]["background"].replace(".png", f"_{random_number}.jpg"))
 
         else:
             random_number = random.randint(1, 5)
@@ -260,13 +260,13 @@ class GetValue():
         self.add_name = name_list[2]
 
         if boat_value == {} or boat_value["boat_json"] == "" or "boat_json" not in boat_value:
-            res1  = json.loads(Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
+            res1 = json.loads(Request.get_html_encode("https://www.spviewer.eu/api/live/ship-list-min.json"))
         else:
             res1 = boat_value["boat_json"]
         res2 = Request.get_html_encode(f"https://starcitizen.tools/{self.name}")
 
         if boat_value == {} or boat_value["ship_hardpoints"] == "" :
-            ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+            ship_hardpoints = "https://www.spviewer.eu/api/live/ship-hardpoints-min.json"
             boat_response = requests.get(ship_hardpoints)
             json_data = boat_response.content.decode('utf-8-sig')
             boat_weapon_list = json.loads(json_data)
@@ -274,7 +274,7 @@ class GetValue():
             boat_weapon_list = boat_value["ship_hardpoints"]
 
         if boat_value == {} or boat_value["data_version"] == "":
-            data_version = Request.get_html_encode("https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+            data_version = Request.get_html_encode("https://www.spviewer.eu/assets/index-CqwyUOLj.js").decode('utf-8')
         else:
             data_version = boat_value["data_version"]
 
@@ -367,11 +367,14 @@ class GetValue():
         quality = common_method.decimal_de_zeroing(res1["Mass"])
         boat_value_dict["quality"] = quality + " KG"
         # 货物
-        goods = common_method.decimal_de_zeroing(res1["Cargo"])
+        goods = common_method.decimal_de_zeroing(res1["Cargo"]['CargoGrid'])
         boat_value_dict["goods"] = goods + " SCU"
         # 储存
-        ExternalStorage = common_method.decimal_de_zeroing(res1["PersonalInventory"])
-        boat_value_dict["storage_space"] = ExternalStorage + ",000 K uSCU"
+        try:
+            ExternalStorage = common_method.decimal_de_zeroing(res1['Cargo']["PersonalInventory"])
+            boat_value_dict["storage_space"] = ExternalStorage + ",000 K uSCU"
+        except:
+            boat_value_dict["storage_space"] = "--数据错误需修复"
         # 索赔\加急
         Insurance = res1["Insurance"]
         StandardClaimTime = common_method().convert_seconds_to_time_format(Insurance["StandardClaimTime"])
@@ -490,15 +493,15 @@ class GetValue():
         # 机体血量
         try:
             body_blood_volume = 0
-            for i in res1["Hull"]['StructureHealthPoints']['SecondaryParts'].values():
+            for i in res1["Hull"]['StructureHealthPoints']['VitalParts'].values():
                 body_blood_volume += i
-            for i in res1["Hull"]["StructureHealthPoints"]['MainParts'].values():
+            for i in res1["Hull"]["StructureHealthPoints"]['Parts'].values():
                 body_blood_volume += i
             boat_value_dict["body_blood_volume"] = common_method.decimal_de_zeroing(body_blood_volume) + " HP"
         except:
             boat_value_dict["body_blood_volume"] = "-"
         # 机头\机身
-        Canopy = res1["Hull"]["StructureHealthPoints"]['MainParts']
+        Canopy = res1["Hull"]["StructureHealthPoints"]['VitalParts']
         if "Nose" in Canopy:
             Canopy = Canopy["Nose"]
         elif "nose" in Canopy:
@@ -507,7 +510,7 @@ class GetValue():
             Canopy = "-"
         Canopy = common_method.decimal_de_zeroing(Canopy)
 
-        Body = res1["Hull"]["StructureHealthPoints"]['MainParts']
+        Body = res1["Hull"]["StructureHealthPoints"]['VitalParts']
         if "Body" in Body:
             Body = Body['Body']
         elif "body" in Body:
@@ -777,7 +780,7 @@ class GetValue():
             '//*[@class ="infobox__content mw-collapsible-content"]//*[@class = "mw-file-description"]//img/@src')[0]
 
         # 采集版本
-        match = re.search(r',gameversion="([^"]+)"', data_version)
+        match = re.search(r'ie.ptugameversion="([^"]+)"', data_version)
         if match:
             boat_value_dict["collection_version"] = match.group(1)
 
@@ -808,17 +811,18 @@ class BoatPhoto:
 
         # 加载静态数据
         boat_json = json.loads(
-            Request.get_html_encode("https://www.spviewer.eu/assets/json/ship-list-min.json"))
-        ship_hardpoints = "https://www.spviewer.eu/assets/json/ship-hardpoints-min.json"
+            Request.get_html_encode("https://www.spviewer.eu/api/live/ship-list-min.json"))
+        ship_hardpoints = "https://www.spviewer.eu/api/live/ship-hardpoints-min.json"
         boat_response = requests.get(ship_hardpoints)
         json_data = boat_response.content.decode('utf-8-sig')
         boat_weapon_list = json.loads(json_data)
 
         data_version = Request.get_html_encode(
-            "https://www.spviewer.eu/assets/js/data-version.js").decode('utf-8')
+            "https://www.spviewer.eu/assets/index-CqwyUOLj.js").decode('utf-8')
 
         boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list,
                       "data_version": data_version}
+
 
         # 线程任务函数
 
