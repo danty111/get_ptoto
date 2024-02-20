@@ -31,7 +31,7 @@ class MakePhoto:
             else:
                 random_number = str(random_number)
             self.back_ground_image = Image.open(
-                self.config[interface]["background"].replace(".png", f"_{random_number}.jpg"))
+                self.config[interface]["background"].replace(".png", f"_{random_number}.png"))
 
         else:
             random_number = random.randint(1, 5)
@@ -371,7 +371,7 @@ class GetValue():
         boat_value_dict["goods"] = goods + " SCU"
         # 储存
         try:
-            ExternalStorage = common_method.decimal_de_zeroing(res1['Cargo']["PersonalInventory"])
+            ExternalStorage = common_method.decimal_de_zeroing(res1['Cargo']['PersonalInventory'])
             boat_value_dict["storage_space"] = ExternalStorage + ",000 K uSCU"
         except:
             boat_value_dict["storage_space"] = "--数据错误需修复"
