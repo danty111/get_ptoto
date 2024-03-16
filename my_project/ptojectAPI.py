@@ -25,7 +25,7 @@ class MakePhoto:
         self.interface = interface
         self.template_image_name = self.config[interface]["background"].replace(".png", "_template.png")
         if self.interface == "boat":
-            random_number = random.randint(1, 6)
+            random_number = random.randint(1, 10)
             if random_number < 10:
                 random_number = "0" + str(random_number)
             else:
@@ -34,7 +34,7 @@ class MakePhoto:
                 self.config[interface]["background"].replace(".png", f"_{random_number}.png"))
 
         else:
-            random_number = random.randint(1, 5)
+            random_number = random.randint(1, 10)
             if random_number < 10:
                 random_number = "0" + str(random_number)
             else:
@@ -321,19 +321,16 @@ class GetValue():
         # 添加游戏价格
         if "Buy" in res1:
             game_price = res1["Buy"]
-            first_item = list(game_price.items())[0]
-            selling_address = {"Astro Armada": '奥里森', 'Area 18': '18区', 'Lorville': "罗威尔"}
+            selling_address = {"Astro Armada": '奥里森', 'Area 18': '18区', 'Lorville': "罗威尔",'New Deal':'新巴贝奇'}
             address = ''
-            if "," in first_item[0]:
-                address_list = first_item[0].split(",")
-                for i in address_list:
-                    i = i.strip()
-                    if i in selling_address:
-                        address += selling_address[i] + ","
-                address = address[: -1]
-            else:
-                address = first_item[0]
-            price = common_method.amount_handled(first_item[1])
+            price = list(game_price.values())[0]
+            for key, value in game_price.items():
+                if "," in key:
+                    address += selling_address[key.split(",")[-1].strip()] + ","
+                else:
+                    address += selling_address[key.strip()] + ","
+            address = address[:-1]
+            price = common_method.amount_handled(price)
             game_price = '{} aUEC ({}) '.format(price, address)
 
             boat_value_dict["game_price"] = game_price

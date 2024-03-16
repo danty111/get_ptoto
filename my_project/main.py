@@ -161,8 +161,6 @@ def boat_real_time():
         get_all_boat_thread = threading.Thread(target=BoatPhoto().get_all_boat)
         get_all_boat_thread.start()
         logging.info("启动船只更新")
-    #
-    #
     # try:
     #     name = request.args.get('name')
     #     name = urllib.parse.unquote(name)
