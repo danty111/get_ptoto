@@ -321,7 +321,7 @@ class GetValue():
         # 添加游戏价格
         if "Buy" in res1:
             game_price = res1["Buy"]
-            selling_address = {"Astro Armada": '奥里森', 'Area 18': '18区', 'Lorville': "罗威尔",'New Deal':'新巴贝奇'}
+            selling_address = {"Orison": '奥里森', 'Area 18': '18区', 'Lorville': "罗威尔",'New Deal':'新巴贝奇'}
             address = ''
             price = list(game_price.values())[0]
             for key, value in game_price.items():
