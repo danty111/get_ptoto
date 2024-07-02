@@ -274,7 +274,7 @@ class GetValue():
             boat_weapon_list = boat_value["ship_hardpoints"]
 
         if boat_value == {} or boat_value["data_version"] == "":
-            data_version = Request.get_html_encode("https://www.spviewer.eu/assets/index-CqwyUOLj.js").decode('utf-8')
+            data_version = Request.get_html_encode("https://www.spviewer.eu/assets/index-BCdUUdb7.js").decode('utf-8')
         else:
             data_version = boat_value["data_version"]
 
@@ -777,7 +777,7 @@ class GetValue():
             '//*[@class ="infobox__content mw-collapsible-content"]//*[@class = "mw-file-description"]//img/@src')[0]
 
         # 采集版本
-        match = re.search(r'ie.ptugameversion="([^"]+)"', data_version)
+        match = re.search(r';ne.ptugameversion="([^"]+)"', data_version)
         if match:
             boat_value_dict["collection_version"] = match.group(1)
 
