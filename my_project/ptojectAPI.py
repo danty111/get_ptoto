@@ -777,6 +777,7 @@ class GetValue():
             '//*[@class ="infobox__content mw-collapsible-content"]//*[@class = "mw-file-description"]//img/@src')[0]
 
         # 采集版本
+        print(data_version)
         match = re.search(r';ne.ptugameversion="([^"]+)"', data_version)
         if match:
             boat_value_dict["collection_version"] = match.group(1)
