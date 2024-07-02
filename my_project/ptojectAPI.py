@@ -816,7 +816,7 @@ class BoatPhoto:
         boat_weapon_list = json.loads(json_data)
 
         data_version = Request.get_html_encode(
-            "https://www.spviewer.eu/assets/index-CqwyUOLj.js").decode('utf-8')
+            "https://www.spviewer.eu/assets/index-BCdUUdb7.js").decode('utf-8')
 
         boat_value = {"boat_json": boat_json, "ship_hardpoints": boat_weapon_list,
                       "data_version": data_version}
